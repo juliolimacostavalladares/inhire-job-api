@@ -222,7 +222,7 @@
       "headers": [
         {
           "name": "Authorization",
-          "value": "Bearer {{ _.candidate_token || _.admin_token }}"
+          "value": "Bearer {{ _.candidate_token }}"
         }
       ],
       "metaSortKey": 206,
@@ -247,7 +247,7 @@
         },
         {
           "name": "Authorization",
-          "value": "Bearer {{ _.candidate_token || _.admin_token }}"
+          "value": "Bearer {{ _.candidate_token }}"
         }
       ],
       "metaSortKey": 207,
@@ -275,7 +275,7 @@
       "headers": [
         {
           "name": "Authorization",
-          "value": "Bearer {{ _.candidate_token || _.admin_token }}"
+          "value": "Bearer {{ _.candidate_token }}"
         }
       ],
       "metaSortKey": 301,
@@ -300,7 +300,7 @@
         },
         {
           "name": "Authorization",
-          "value": "Bearer {{ _.candidate_token || _.admin_token }}"
+          "value": "Bearer {{ _.candidate_token }}"
         },
         {
           "name": "Idempotency-Key",
@@ -321,7 +321,7 @@
       "headers": [
         {
           "name": "Authorization",
-          "value": "Bearer {{ _.candidate_token || _.admin_token }}"
+          "value": "Bearer {{ _.candidate_token }}"
         }
       ],
       "metaSortKey": 303,
@@ -349,7 +349,7 @@
       "headers": [
         {
           "name": "Authorization",
-          "value": "Bearer {{ _.candidate_token || _.admin_token }}"
+          "value": "Bearer {{ _.candidate_token }}"
         },
         {
           "name": "Idempotency-Key",
@@ -371,7 +371,7 @@
       "headers": [
         {
           "name": "Authorization",
-          "value": "Bearer {{ _.candidate_token || _.admin_token }}"
+          "value": "Bearer {{ _.candidate_token }}"
         }
       ],
       "metaSortKey": 305,
@@ -735,7 +735,7 @@
       "headers": [
         {
           "name": "Authorization",
-          "value": "Bearer {{ _.candidate_token || _.admin_token }}"
+          "value": "Bearer {{ _.candidate_token }}"
         },
         {
           "name": "Idempotency-Key",
@@ -757,7 +757,7 @@
       "headers": [
         {
           "name": "Authorization",
-          "value": "Bearer {{ _.candidate_token || _.admin_token }}"
+          "value": "Bearer {{ _.candidate_token }}"
         }
       ],
       "afterResponseScript": "try {\n  const res = insomnia.response.json();\n  if (res.resumeArtifactId) {\n    insomnia.environment.set('resume_artifact_id', res.resumeArtifactId);\n  }\n} catch (e) {\n  console.error('Error in after-response script', e);\n}",
@@ -775,7 +775,7 @@
       "headers": [
         {
           "name": "Authorization",
-          "value": "Bearer {{ _.candidate_token || _.admin_token }}"
+          "value": "Bearer {{ _.candidate_token }}"
         }
       ],
       "metaSortKey": 603,
@@ -792,7 +792,7 @@
       "headers": [
         {
           "name": "Authorization",
-          "value": "Bearer {{ _.candidate_token || _.admin_token }}"
+          "value": "Bearer {{ _.candidate_token }}"
         }
       ],
       "metaSortKey": 604,
@@ -828,7 +828,7 @@
         },
         {
           "name": "Authorization",
-          "value": "Bearer {{ _.candidate_token || _.admin_token }}"
+          "value": "Bearer {{ _.candidate_token }}"
         },
         {
           "name": "Idempotency-Key",
@@ -850,7 +850,7 @@
       "headers": [
         {
           "name": "Authorization",
-          "value": "Bearer {{ _.candidate_token || _.admin_token }}"
+          "value": "Bearer {{ _.candidate_token }}"
         }
       ],
       "metaSortKey": 702,
@@ -867,7 +867,7 @@
       "headers": [
         {
           "name": "Authorization",
-          "value": "Bearer {{ _.candidate_token || _.admin_token }}"
+          "value": "Bearer {{ _.candidate_token }}"
         }
       ],
       "metaSortKey": 703,
@@ -920,7 +920,7 @@
         },
         {
           "name": "Authorization",
-          "value": "Bearer {{ _.candidate_token || _.admin_token }}"
+          "value": "Bearer {{ _.candidate_token }}"
         },
         {
           "name": "Idempotency-Key",
@@ -941,7 +941,7 @@
       "headers": [
         {
           "name": "Authorization",
-          "value": "Bearer {{ _.candidate_token || _.admin_token }}"
+          "value": "Bearer {{ _.candidate_token }}"
         }
       ],
       "metaSortKey": 802,
@@ -958,7 +958,7 @@
       "headers": [
         {
           "name": "Authorization",
-          "value": "Bearer {{ _.candidate_token || _.admin_token }}"
+          "value": "Bearer {{ _.candidate_token }}"
         }
       ],
       "metaSortKey": 803,
