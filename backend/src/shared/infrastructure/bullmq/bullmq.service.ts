@@ -79,6 +79,18 @@ export class BullMQService implements OnModuleInit, OnModuleDestroy {
     return this.queues.get(name)!;
   }
 
+  getAllQueues(): Queue[] {
+    const queueNames: QueueName[] = [
+      'tenant-discovery',
+      'job-collection',
+      'profile-analysis',
+      'resume-generation',
+      'job-application',
+      'auto-apply',
+    ];
+    return queueNames.map((name) => this.getQueue(name)).filter((q): q is Queue => q !== null);
+  }
+
   async addJob<T extends QueueJobPayload>(
     queueName: QueueName,
     jobName: string,
