@@ -1,0 +1,16 @@
+{
+  "name": "inhire-job-api",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "build": "pnpm --filter inhire-job-api-backend run build",
+    "test": "pnpm --filter inhire-job-api-backend run test",
+    "test:unit": "pnpm --filter inhire-job-api-backend run test:unit",
+    "test:integration": "pnpm --filter inhire-job-api-backend run test:integration",
+    "test:component": "pnpm --filter inhire-job-api-backend run test:component",
+    "test:e2e": "pnpm --filter inhire-job-api-backend run test:e2e",
+    "typecheck": "pnpm --filter inhire-job-api-backend run typecheck",
+    "lint": "pnpm --filter inhire-job-api-backend run lint",
+    "verify:push": "pnpm run typecheck && pnpm run test"
+  }
+}

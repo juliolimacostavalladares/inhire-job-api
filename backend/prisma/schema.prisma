@@ -1,0 +1,309 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id              String           @id @default(uuid())
+  email           String           @unique
+  passwordHash    String
+  role            String           @default("CANDIDATE")
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  refreshSessions RefreshSession[]
+  profile         CandidateProfile?
+  applications    JobApplication[]
+  autoApplyPolicy AutoApplyPolicy?
+  autoApplyDecisions AutoApplyDecision[]
+  artifacts       ResumeArtifact[]
+
+  @@map("users")
+}
+
+model RefreshSession {
+  id        String    @id @default(uuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash String    @unique
+  expiresAt DateTime
+  revokedAt DateTime?
+  createdAt DateTime  @default(now())
+
+  @@map("refresh_sessions")
+}
+
+model CandidateProfile {
+  id                  String   @id @default(uuid())
+  userId              String   @unique
+  user                User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  status              String   @default("PENDING_IMPORT")
+  version             Int      @default(1)
+  fullName            String?
+  headline            String?
+  email               String?
+  phone               String?
+  location            Json?
+  experiences         Json?
+  education           Json?
+  skills              String[]
+  rawResumeArtifactId String?
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  @@map("candidate_profiles")
+}
+
+model ProfileImportAttempt {
+  id            String    @id @default(uuid())
+  userId        String
+  status        String    @default("PENDING")
+  rawArtifactId String?
+  errorCode     String?
+  errorMessage  String?
+  createdAt     DateTime  @default(now())
+  finishedAt    DateTime?
+
+  @@map("profile_import_attempts")
+}
+
+model Tenant {
+  id              String    @id @default(uuid())
+  slug            String    @unique
+  name            String
+  officialUrl     String
+  isActive        Boolean   @default(true)
+  lastCollectedAt DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  jobs            Job[]
+
+  @@map("tenants")
+}
+
+model Job {
+  id          String   @id @default(uuid())
+  tenantId    String
+  tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  externalId  String
+  title       String
+  url         String
+  status      String   @default("PUBLISHED")
+  description String
+  location    String?
+  formSchema  Json     @default("[]")
+  version     Int      @default(1)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  applications JobApplication[]
+  resumes     TailoredResume[]
+
+  @@unique([tenantId, externalId])
+  @@map("jobs")
+}
+
+model CrawlRun {
+  id               String      @id @default(uuid())
+  type             String
+  trigger          String
+  status           String
+  totalTenants     Int         @default(0)
+  processedTenants Int         @default(0)
+  totalJobsFound   Int         @default(0)
+  errorCode        String?
+  errorMessage     String?
+  startedAt        DateTime    @default(now())
+  finishedAt       DateTime?
+  items            CrawlItem[]
+
+  @@map("crawl_runs")
+}
+
+model CrawlItem {
+  id            String    @id @default(uuid())
+  runId         String
+  run           CrawlRun  @relation(fields: [runId], references: [id], onDelete: Cascade)
+  tenantId      String?
+  status        String
+  jobsCollected Int       @default(0)
+  errorCode     String?
+  errorMessage  String?
+  createdAt     DateTime  @default(now())
+
+  @@map("crawl_items")
+}
+
+model TailoredResume {
+  id               String                    @id @default(uuid())
+  userId           String
+  jobId            String
+  job              Job                       @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  profileVersion   Int
+  jobVersion       Int
+  templateVersion  Int                       @default(1)
+  status           String                    @default("REQUESTED")
+  matchScore       Int?
+  matchSummary     String?
+  resumeArtifactId String?
+  errorCode        String?
+  createdAt        DateTime                  @default(now())
+  updatedAt        DateTime                  @updatedAt
+  attempts         ResumeGenerationAttempt[]
+
+  @@unique([userId, jobId, profileVersion, jobVersion, templateVersion])
+  @@map("tailored_resumes")
+}
+
+model ResumeGenerationAttempt {
+  id               String         @id @default(uuid())
+  tailoredResumeId String
+  tailoredResume   TailoredResume @relation(fields: [tailoredResumeId], references: [id], onDelete: Cascade)
+  ordinal          Int
+  status           String
+  errorCode        String?
+  startedAt        DateTime       @default(now())
+  finishedAt       DateTime?
+
+  @@map("resume_generation_attempts")
+}
+
+model ResumeArtifact {
+  id             String   @id @default(uuid())
+  userId         String
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  storageKey     String
+  fileName       String
+  mimeType       String
+  fileSize       Int
+  sha256Checksum String
+  createdAt      DateTime @default(now())
+
+  @@map("resume_artifacts")
+}
+
+model JobApplication {
+  id                      String              @id @default(uuid())
+  userId                  String
+  user                    User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  jobId                   String
+  job                     Job                 @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  jobUrl                  String
+  status                  String              @default("QUEUED")
+  processingStep          String?
+  resumeMode              String
+  resumeArtifactId        String?
+  answers                 Json?
+  formSchemaSnapshot      Json?
+  candidateProfileSnapshot Json?
+  attemptsCount           Int                 @default(0)
+  matchScore              Int?
+  autoApplied             Boolean             @default(false)
+  errorCode               String?
+  errorMessage            String?
+  submittedAt             DateTime?
+  version                 Int                 @default(1)
+  createdAt               DateTime            @default(now())
+  updatedAt               DateTime            @updatedAt
+  attempts                ApplicationAttempt[]
+  receipt                 SubmissionReceipt?
+
+  @@unique([userId, jobId])
+  @@map("job_applications")
+}
+
+model ApplicationAttempt {
+  id            String         @id @default(uuid())
+  applicationId String
+  application   JobApplication @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  ordinal       Int
+  step          String
+  outcome       String
+  errorCode     String?
+  errorMessage  String?
+  evidenceRef   String?
+  startedAt     DateTime       @default(now())
+  finishedAt    DateTime?
+
+  @@unique([applicationId, ordinal])
+  @@map("application_attempts")
+}
+
+model SubmissionReceipt {
+  id                     String         @id @default(uuid())
+  applicationId          String         @unique
+  application            JobApplication @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  attemptId              String
+  endpointFingerprint    String
+  responseStatus         Int
+  confirmationFingerprint String
+  artifactChecksum       String
+  externalRequestId      String?
+  submittedAt            DateTime       @default(now())
+
+  @@map("submission_receipts")
+}
+
+model AutoApplyPolicy {
+  id              String   @id @default(uuid())
+  userId          String   @unique
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  enabled         Boolean  @default(false)
+  minScore        Int      @default(70)
+  dailyLimit      Int      @default(10)
+  timezone        String   @default("America/Sao_Paulo")
+  targetRoles     String[]
+  targetLocations String[]
+  version         Int      @default(1)
+  updatedAt       DateTime @updatedAt
+
+  @@map("auto_apply_policies")
+}
+
+model AutoApplyDecision {
+  id             String   @id @default(uuid())
+  userId         String
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  jobId          String
+  decision       String
+  score          Int?
+  reason         String
+  policyVersion  Int
+  profileVersion Int
+  jobVersion     Int
+  evaluationDate String
+  createdAt      DateTime @default(now())
+
+  @@unique([userId, jobId, evaluationDate])
+  @@map("auto_apply_decisions")
+}
+
+model AuditLog {
+  id            String   @id @default(uuid())
+  actorId       String?
+  actorRole     String?
+  action        String
+  targetType    String
+  targetId      String?
+  correlationId String?
+  details       Json?
+  createdAt     DateTime @default(now())
+
+  @@map("audit_logs")
+}
+
+model IdempotencyRecord {
+  id             String   @id @default(uuid())
+  actorId        String
+  key            String
+  route          String
+  requestHash    String
+  responseStatus Int?
+  responseBody   Json?
+  createdAt      DateTime @default(now())
+
+  @@unique([actorId, key, route])
+  @@map("idempotency_records")
+}
