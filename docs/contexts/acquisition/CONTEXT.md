@@ -7,5 +7,5 @@
 - **Observation:** fato bruto e datado sobre Tenant, Job ou formulário, antes da tradução pelo Catalog.
 - **Run:** execução rastreável de Discovery ou Collection.
 - **Run Item:** resultado individual dentro de um Run.
-- **Niche Filtering / Profile Relevance:** regra de ingestão e seleção que retém exclusivamente vagas alinhadas ao nicho de Engenharia de Software, Backend, Arquitetura, Cloud e Tecnologias de Desenvolvimento (TypeScript, Node.js, Go, Python, Microsserviços), eliminando ruídos e cargos operacionais não correlatos na fonte.
+- **Profile-Driven Ingestion:** regra de seleção dinâmica que filtra e salva no Catálogo apenas as vagas que possuem aderência semântica com os perfis de candidatos cadastrados (`skills`, `headline`, `targetRoles`), garantindo que o catálogo seja 100% dinâmico e personalizado para o usuário real.
 

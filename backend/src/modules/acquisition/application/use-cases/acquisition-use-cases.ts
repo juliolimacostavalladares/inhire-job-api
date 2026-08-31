@@ -1,14 +1,48 @@
 import { Injectable, Inject } from '@nestjs/common';
 import { CRAWL_RUNS_REPOSITORY, CrawlRunsRepository } from '../ports/crawl-runs.repository';
+import { TENANTS_REPOSITORY } from '../../../catalog/application/ports/tenants.repository';
+import { TenantsRepository } from '../../../catalog/application/ports/tenants.repository';
 import { JOB_COLLECTOR_CLIENT, JobCollectorClient } from '../ports/job-collector.client';
 import { CATALOG_SERVICE, CatalogService } from '../../../catalog/application/ports/catalog-service.interface';
-import { TENANTS_REPOSITORY, TenantsRepository } from '../../../catalog/application/ports/tenants.repository';
 import { CrawlRun } from '../../domain/crawl-run.entity';
 import { BullMQService } from '@shared/infrastructure/bullmq/bullmq.service';
 import { ID_GENERATOR_PORT, IdGenerator } from '@shared/domain/ports/id-generator.port';
 import { CLOCK_PORT, Clock } from '@shared/domain/ports/clock.port';
 import { SanitizedLogger } from '@shared/infrastructure/logger/sanitized-logger.service';
-import { AppError } from '@shared/domain/errors/app-error';
+import { PrismaService } from '@shared/infrastructure/prisma/prisma.service';
+
+const STOP_WORDS = new Set([
+  'de', 'da', 'do', 'dos', 'das', 'em', 'para', 'com', 'sem', 'por', 'que', 'como',
+  'senior', 'sênior', 'pleno', 'junior', 'júnior', 'lead', 'staff', 'principal',
+  'especialista', 'analista', 'gerente', 'coordenador', 'pessoa', 'vaga', 'oportunidade',
+]);
+
+function textMatchesTerms(text: string, terms: string[]): boolean {
+  const combined = text.toLowerCase();
+  return terms.some((term) => {
+    const cleanTerm = term.toLowerCase().trim();
+    if (!cleanTerm) return false;
+    // Direct substring match
+    if (combined.includes(cleanTerm)) return true;
+    
+    // Substantive domain words match (excluding generic role prefixes/seniority)
+    const substantiveWords = cleanTerm
+      .split(/[\s/\\,\-]+/)
+      .map((w) => w.trim())
+      .filter((w) => w.length > 2 && !STOP_WORDS.has(w));
+
+    return substantiveWords.length > 0 && substantiveWords.some((w) => combined.includes(w));
+  });
+}
+
+function textMatchesSkills(text: string, skills: string[]): boolean {
+  const combined = text.toLowerCase();
+  return skills.some((skill) => {
+    const cleanSkill = skill.toLowerCase().trim();
+    if (!cleanSkill) return false;
+    return combined.includes(cleanSkill);
+  });
+}
 
 @Injectable()
 export class CreateDiscoveryRunUseCase {
@@ -72,7 +106,7 @@ export class CreateCollectionRunUseCase {
     for (const tenant of tenants) {
       await this.bullmqService.addJob(
         'job-collection',
-        'collect-tenant-jobs',
+        'collect-jobs',
         { runId, tenantId: tenant.id, correlationId },
         `collection:${runId}:${tenant.id}`,
       );
@@ -121,6 +155,7 @@ export class ProcessJobCollectionUseCase {
     @Inject(CATALOG_SERVICE) private readonly catalogService: CatalogService,
     @Inject(ID_GENERATOR_PORT) private readonly idGenerator: IdGenerator,
     @Inject(CLOCK_PORT) private readonly clock: Clock,
+    private readonly prisma: PrismaService,
     private readonly logger: SanitizedLogger,
   ) {}
 
@@ -135,7 +170,6 @@ export class ProcessJobCollectionUseCase {
       const collection = await this.collectorClient.collectFromTenant(tenant.officialUrl);
 
       if (collection.error) {
-        // CAT-AC-03: Coleta parcial NÃO fecha vagas sem evidência!
         await this.runsRepo.addItem({
           id: this.idGenerator.generate(),
           runId,
@@ -151,21 +185,82 @@ export class ProcessJobCollectionUseCase {
         return;
       }
 
+      // Leitura dinâmica dos perfis de candidatos e políticas cadastradas no sistema
+      const profiles = await this.prisma.candidateProfile.findMany({
+        select: {
+          headline: true,
+          skills: true,
+          experiences: true,
+        },
+      });
+
+      const policies = await this.prisma.autoApplyPolicy.findMany({
+        select: {
+          targetRoles: true,
+          targetLocations: true,
+        },
+      });
+
+      const hasCandidateCriteria =
+        profiles.some((p) => p.headline || (p.skills && p.skills.length > 0)) ||
+        policies.some((pol) => pol.targetRoles && pol.targetRoles.length > 0);
+
       const observedExternalIds: string[] = [];
+      let savedJobsCount = 0;
+
       for (const jobData of collection.jobs) {
-        observedExternalIds.push(jobData.externalId);
-        await this.catalogService.upsertJob({
-          tenantId: tenant.id,
-          externalId: jobData.externalId,
-          title: jobData.title,
-          url: jobData.url, // Canonical URL
-          description: jobData.description,
-          location: jobData.location,
-          formSchema: jobData.formSchema,
-        });
+        let isRelevant = !hasCandidateCriteria;
+
+        if (hasCandidateCriteria) {
+          const jobText = `${jobData.title} ${jobData.description}`;
+
+          // Match contra os perfis dos candidatos
+          for (const p of profiles) {
+            if (p.headline && textMatchesTerms(jobText, [p.headline])) {
+              isRelevant = true;
+              break;
+            }
+            if (p.skills && p.skills.length > 0 && textMatchesSkills(jobText, p.skills)) {
+              isRelevant = true;
+              break;
+            }
+            if (p.experiences && Array.isArray(p.experiences)) {
+              const roles = (p.experiences as Array<{ role?: string }>).map((e) => e.role).filter(Boolean) as string[];
+              if (roles.length > 0 && textMatchesTerms(jobText, roles)) {
+                isRelevant = true;
+                break;
+              }
+            }
+          }
+
+          // Match contra as políticas de auto-apply do candidato
+          if (!isRelevant) {
+            for (const pol of policies) {
+              if (pol.targetRoles && pol.targetRoles.length > 0 && textMatchesTerms(jobText, pol.targetRoles)) {
+                isRelevant = true;
+                break;
+              }
+            }
+          }
+        }
+
+        // Salva apenas as vagas que fazem sentido com o perfil do candidato
+        if (isRelevant) {
+          observedExternalIds.push(jobData.externalId);
+          savedJobsCount++;
+          await this.catalogService.upsertJob({
+            tenantId: tenant.id,
+            externalId: jobData.externalId,
+            title: jobData.title,
+            url: jobData.url, // Canonical URL
+            description: jobData.description,
+            location: jobData.location,
+            formSchema: jobData.formSchema,
+          });
+        }
       }
 
-      // Only close missing jobs if collection was completely conclusive
+      // Conclusive collection updates active jobs for observed tenant
       if (collection.isConclusive) {
         await this.catalogService.closeMissingJobs(tenant.id, observedExternalIds);
       }
@@ -175,11 +270,11 @@ export class ProcessJobCollectionUseCase {
         runId,
         tenantId,
         status: 'SUCCEEDED',
-        jobsCollected: collection.jobs.length,
+        jobsCollected: savedJobsCount,
         createdAt: this.clock.now(),
       });
 
-      run.recordTenantResult('SUCCEEDED', collection.jobs.length, this.clock.now());
+      run.recordTenantResult('SUCCEEDED', savedJobsCount, this.clock.now());
       await this.runsRepo.save(run);
     } catch (err: unknown) {
       const error = err as Error;
@@ -189,7 +284,7 @@ export class ProcessJobCollectionUseCase {
         tenantId,
         status: 'FAILED',
         jobsCollected: 0,
-        errorCode: 'UNEXPECTED_COLLECTION_ERROR',
+        errorCode: 'COLLECTION_EXCEPTION',
         errorMessage: error.message,
         createdAt: this.clock.now(),
       });
@@ -204,8 +299,8 @@ export class ProcessJobCollectionUseCase {
 export class ListRunsUseCase {
   constructor(@Inject(CRAWL_RUNS_REPOSITORY) private readonly runsRepo: CrawlRunsRepository) {}
 
-  async execute(filter?: { type?: string; status?: string; page?: number; limit?: number }) {
-    return this.runsRepo.findAll(filter);
+  async execute(filters: { type?: string; status?: string; page?: number; limit?: number }) {
+    return this.runsRepo.findAll(filters);
   }
 }
 
@@ -213,10 +308,10 @@ export class ListRunsUseCase {
 export class GetRunUseCase {
   constructor(@Inject(CRAWL_RUNS_REPOSITORY) private readonly runsRepo: CrawlRunsRepository) {}
 
-  async execute(runId: string): Promise<CrawlRun> {
-    const run = await this.runsRepo.findById(runId);
+  async execute(id: string) {
+    const run = await this.runsRepo.findById(id);
     if (!run) {
-      throw AppError.notFound(`Crawl run ${runId} not found`);
+      throw new Error(`Run ${id} not found`);
     }
     return run;
   }

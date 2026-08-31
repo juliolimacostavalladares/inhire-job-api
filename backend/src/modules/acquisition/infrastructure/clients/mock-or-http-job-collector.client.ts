@@ -12,89 +12,6 @@ function slugify(text: string): string {
     .replace(/\s+/g, '-') || 'vaga';
 }
 
-const TECH_INCLUDE_PATTERNS = [
-  /\bsoftware\b/i,
-  /\bbackend\b/i,
-  /\bback-end\b/i,
-  /\bback end\b/i,
-  /\bengineer\b/i,
-  /\bengenheir[oa]\b/i,
-  /\bdesenvolvedor[a]?\b/i,
-  /\bdeveloper\b/i,
-  /\bfullstack\b/i,
-  /\bfull-stack\b/i,
-  /\bfull stack\b/i,
-  /\bfrontend\b/i,
-  /\bfront-end\b/i,
-  /\btech lead\b/i,
-  /\blead engineer\b/i,
-  /\barquitet[oa]\b/i,
-  /\barchitect\b/i,
-  /\bnode\b/i,
-  /\btypescript\b/i,
-  /\bgolang\b/i,
-  /\bgo\b/i,
-  /\bpython\b/i,
-  /\brust\b/i,
-  /\bjava\b/i,
-  /\bsre\b/i,
-  /\bdevops\b/i,
-  /\bcloud\b/i,
-  /\binfraestrutura\b/i,
-  /\binfrastructure\b/i,
-  /\bdata engineer\b/i,
-  /\bengenheir[oa] de dados\b/i,
-  /\bsolutions engineer\b/i,
-  /\btech manager\b/i,
-  /\bengineering manager\b/i,
-  /\bqa engineer\b/i,
-  /\bsdet\b/i,
-];
-
-const NON_TECH_EXCLUDE_PATTERNS = [
-  /\balmoxarifad[oa]\b/i,
-  /\bauxiliar de log[ií]stica\b/i,
-  /\baprendiz\b/i,
-  /\bmotorista\b/i,
-  /\bestoque\b/i,
-  /\blimpeza\b/i,
-  /\brecep[cç][aã]o\b/i,
-  /\brecepcionista\b/i,
-  /\batendente\b/i,
-  /\bbdr\b/i,
-  /\bvendas\b/i,
-  /\bs&op\b/i,
-  /\bpreven[cç][aã]o a perdas\b/i,
-  /\bcomunica[cç][aã]o interna\b/i,
-  /\baccount manager\b/i,
-  /\baccount management\b/i,
-  /\bbusiness development\b/i,
-  /\bassistente log[ií]stica\b/i,
-  /\bvendedor[a]?\b/i,
-  /\bpromotor[a]?\b/i,
-  /\bvp of sales\b/i,
-];
-
-function isJobInProfessionalNiche(title: string, description = ''): boolean {
-  const text = `${title} ${description}`.toLowerCase();
-
-  // 1. Excluir explicitamente cargos não-técnicos
-  for (const excludePattern of NON_TECH_EXCLUDE_PATTERNS) {
-    if (excludePattern.test(title)) {
-      return false;
-    }
-  }
-
-  // 2. Incluir se houver correspondência com termos de engenharia e tecnologia
-  for (const includePattern of TECH_INCLUDE_PATTERNS) {
-    if (includePattern.test(text)) {
-      return true;
-    }
-  }
-
-  return false;
-}
-
 @Injectable()
 export class MockOrHttpJobCollectorClient implements JobCollectorClient {
   constructor(private readonly logger?: SanitizedLogger) {}
@@ -163,7 +80,7 @@ export class MockOrHttpJobCollectorClient implements JobCollectorClient {
   }
 
   /**
-   * Coleta vagas reais da API pública oficial do InHire, aplicando filtro estrito de nicho de Engenharia de Software / Backend
+   * Coleta vagas reais da API pública oficial do InHire
    */
   async collectFromTenant(officialUrl: string): Promise<CollectionResult> {
     const parsed = new URL(officialUrl);
@@ -202,11 +119,6 @@ export class MockOrHttpJobCollectorClient implements JobCollectorClient {
           for (const item of data.jobsPage) {
             if (!item.jobId || !item.displayName) continue;
 
-            // Filtragem estrita de nicho (Engenharia de Software / Backend / Tech)
-            if (!isJobInProfessionalNiche(item.displayName)) {
-              continue;
-            }
-
             const jobSlug = slugify(item.displayName);
             const canonicalUrl = `https://${tenantSlug}.inhire.app/vagas/${item.jobId}/${jobSlug}`;
             const locationStr = item.location ? `${item.location} (${item.workplaceType || 'Remoto'})` : (item.workplaceType || 'Remoto');
@@ -215,7 +127,7 @@ export class MockOrHttpJobCollectorClient implements JobCollectorClient {
               externalId: item.jobId,
               title: item.displayName,
               url: canonicalUrl,
-              description: `Oportunidade especializada de tecnologia na ${data.tenantName || tenantSlug}. Foco técnico em desenvolvimento de software, arquitetura e engenharia. Modalidade: ${item.workplaceType || 'Não informada'}. Localidade: ${locationStr}.`,
+              description: `Vaga oficial publicada pela ${data.tenantName || tenantSlug} no portal InHire. Modalidade: ${item.workplaceType || 'Não informada'}. Localidade: ${locationStr}.`,
               location: locationStr,
               formSchema: [
                 { key: 'fullName', label: 'Nome Completo', type: 'text', required: true },

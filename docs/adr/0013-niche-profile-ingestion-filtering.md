@@ -1,20 +1,25 @@
-# ADR-0013 — Filtragem por Nicho Profissional na Ingestão de Vagas
+# ADR-0013 — Filtragem Dinâmica de Vagas pelo Perfil Profissional do Candidato
 
 Status: Aceito
 
 ## Contexto
 
-A plataforma InHire atende empresas com vagas em diversas áreas (ex.: Logística, Vendas, Operações de Transporte, Atendimento e Almoxarifado).
-Para garantir máxima assertividade nas candidaturas automáticas (Auto-Apply) e manuais do usuário, o sistema deve manter um catálogo de alta densidade e relevância, focado exclusivamente no nicho profissional do candidato: **Engenharia de Software, Backend, Arquitetura, Cloud, Tech Lead e Tecnologias de Desenvolvimento (TypeScript, Node.js, Go, Python, Microsserviços)**.
+A plataforma InHire agrega vagas de empresas em múltiplos departamentos e segmentos (ex.: Operações, Logística, Vendas, Design, Engenharia, Atendimento).
+Para que o sistema seja verdadeiramente personalizado, inteligente e livre de hardcodes estáticos no código-fonte, a seleção de vagas a serem persistidas no Catálogo deve ser **dinâmica e derivada diretamente do Perfil Profissional do Candidato** (`CandidateProfile.headline`, `CandidateProfile.skills`, `CandidateProfile.experiences` e `AutoApplyPolicy.targetRoles`).
 
 ## Decisão
 
-O componente de coleta (`JobCollectorClient`) aplica regras determinísticas de inclusão e exclusão semântica na ingestão:
-1. **Regras de Inclusão (Must Match)**: Título e/ou descrição devem conter termos relacionados a desenvolvimento de software, backend, frontend/fullstack, engenharia de dados, infraestrutura/cloud/devops, arquitetura e liderança técnica.
-2. **Regras de Exclusão (Exclude)**: Vagas de almoxarifado, operações logísticas de piso, aprendiz de operações, motorista, recepção, vendas externas ou cargos não correlatos são filtradas e descartadas antes do cadastro no Catálogo.
-3. **Preservação de Evidência Canônica**: Para cada vaga aprovada no filtro, a URL oficial canônica (`Job.url`) e o formulário oficial continuam sendo rigorosamente preservados byte a byte.
+1. **Ingestão Dinâmica Baseada em Perfil (`Profile-Driven Ingestion`)**:
+   - O `JobCollectorClient` coleta os dados brutos oficiais dos Tenants na InHire.
+   - O caso de uso `ProcessJobCollectionUseCase` avalia a aderência de cada vaga contra o perfil profissional ativo do usuário.
+   - Uma vaga é aprovada e persistida no Catálogo se e somente se possuir correlação semântica positiva com os atributos do perfil do candidato (título/cargo compatível com a headline/targetRoles ou habilidades/skills demandadas no texto da vaga).
+2. **Sem Hardcode de Cargos ou Tecnologias**:
+   - É proibido chumbar listas fixas de tecnologias ou áreas no código. O nicho é determinado 100% pelos dados dinâmicos do perfil do candidato cadastrado no banco.
+3. **Preservação Canônica e Idempotência**:
+   - Vagas aprovadas mantêm a URL canônica oficial e o esquema de formulário intactos.
+   - Re-execuções são idempotentes e garantem que o catálogo reflita a qualquer momento o estado atual do perfil do candidato.
 
 ## Consequências
 
-- **Positivas:** O catálogo passa a conter somente vagas de alto valor e aderência direta ao perfil do usuário, otimizando o Auto-Apply e o consumo de IA na geração de currículos sob medida.
-- **Governança:** Reduz drasticamente custos de processamento e submissão em vagas irrelevantes.
+- **Positivas:** Máxima flexibilidade e personalização. Qualquer candidato (seja Desenvolvedor, Product Manager, Designer, Arquiteto, QA ou Cientista de Dados) terá um catálogo personalizado e perfeitamente ajustado ao seu perfil.
+- **Governança:** Elimina ruídos no banco de dados e otimiza o pipeline de Auto-Apply e geração de currículos sob medida por IA.
