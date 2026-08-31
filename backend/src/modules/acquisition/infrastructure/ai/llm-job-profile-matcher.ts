@@ -5,42 +5,30 @@ import {
   JobDataForAi,
   AiMatchEvaluationResult,
 } from '../../application/ports/job-profile-ai-matcher.port';
+import { OpenRouterAiClient } from '@shared/infrastructure/ai/openrouter-ai.client';
 import { SanitizedLogger } from '@shared/infrastructure/logger/sanitized-logger.service';
 
 @Injectable()
 export class LlmJobProfileMatcher implements JobProfileAiMatcher {
-  constructor(private readonly logger?: SanitizedLogger) {}
+  constructor(
+    private readonly aiClient: OpenRouterAiClient,
+    private readonly logger?: SanitizedLogger,
+  ) {}
 
   async evaluateMatch(
     profile: CandidateProfileForAi,
     job: JobDataForAi,
   ): Promise<AiMatchEvaluationResult> {
-    const apiKey = process.env.OPENAI_API_KEY || process.env.GEMINI_API_KEY || process.env.LLM_API_KEY;
+    const systemPrompt = `Você é um avaliador técnico e recrutador de IA especializado em matching profissional e análise de carreiras.
+Analise a compatibilidade real entre o Perfil do Candidato e a Vaga de Emprego encontrada.
 
-    if (apiKey) {
-      try {
-        return await this.evaluateWithLlmApi(apiKey, profile, job);
-      } catch (err: unknown) {
-        if (this.logger) {
-          this.logger.warn(
-            `LLM API call failed, falling back to local semantic evaluator: ${(err as Error).message}`,
-            'LlmJobProfileMatcher',
-          );
-        }
-      }
-    }
+DIRETRIZES DE DECISÃO (ADR-0011 / ADR-0013):
+1. Avalie se a vaga faz sentido para a área de atuação, especialidade e tecnologias dominadas pelo candidato.
+2. Exemplo: se o candidato é especialista em Frontend e a vaga for de Backend puro ou DBA, rejeite (isMatch: false).
+3. Se a vaga for compatível com a especialidade e tecnologias do candidato, aprove (isMatch: true).
+4. Retorne ESTRITAMENTE um objeto JSON válido.`;
 
-    return this.evaluateWithSemanticAnalyzer(profile, job);
-  }
-
-  private async evaluateWithLlmApi(
-    apiKey: string,
-    profile: CandidateProfileForAi,
-    job: JobDataForAi,
-  ): Promise<AiMatchEvaluationResult> {
-    const prompt = `Analise a compatibilidade real entre o Perfil do Candidato e a Vaga de Emprego encontrada.
-
-PERFIL DO CANDIDATO:
+    const userPrompt = `PERFIL DO CANDIDATO:
 - Headline / Cargo Atual: ${profile.headline || 'Não informado'}
 - Habilidades / Tecnologias: ${profile.skills.join(', ') || 'Não informadas'}
 - Cargos Desejados: ${profile.targetRoles?.join(', ') || 'Não informados'}
@@ -51,56 +39,24 @@ VAGA DE EMPREGO:
 - Descrição / Requisitos: ${job.description}
 - Localidade: ${job.location || 'Não informada'}
 
-INSTRUÇÕES DE DECISÃO:
-1. Analise se a vaga FAZ SENTIDO para a área de atuação, especialidade e tecnologias do candidato.
-2. Exemplo: se o candidato é especialista em Frontend e a vaga for de Backend puro, NÃO faz sentido (isMatch: false).
-3. Se a vaga for compatível com a especialidade e tecnologias do candidato, aprove (isMatch: true).
-4. Retorne ESTRITAMENTE um objeto JSON válido (sem markdown, sem codeblocks) com a estrutura:
-{"isMatch": boolean, "matchScore": number, "reason": "explicação concisa"}`;
+Retorne exatamente a estrutura JSON:
+{
+  "isMatch": boolean,
+  "matchScore": number,
+  "reason": "explicação concisa da decisão da IA"
+}`;
 
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 8000);
+    const fallback = this.evaluateWithSemanticAnalyzer(profile, job);
 
-    const res = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${apiKey}`,
-      },
-      body: JSON.stringify({
-        model: process.env.LLM_MODEL || 'gpt-4o-mini',
-        messages: [
-          {
-            role: 'system',
-            content: 'Você é um avaliador técnico e recrutador de IA especializado em matching profissional.',
-          },
-          { role: 'user', content: prompt },
-        ],
-        temperature: 0.1,
-      }),
-      signal: controller.signal,
-    });
-
-    clearTimeout(timeout);
-
-    if (!res.ok) {
-      throw new Error(`LLM API returned status ${res.status}`);
-    }
-
-    const data = (await res.json()) as { choices?: Array<{ message?: { content?: string } }> };
-    const content = data.choices?.[0]?.message?.content?.trim() || '';
-    const cleanJson = content.replace(/^```json\s*/i, '').replace(/\s*```$/i, '');
-    const parsed = JSON.parse(cleanJson) as { isMatch?: boolean; matchScore?: number; reason?: string };
-
-    return {
-      isMatch: Boolean(parsed.isMatch),
-      matchScore: Number(parsed.matchScore ?? (parsed.isMatch ? 85 : 20)),
-      reason: String(parsed.reason || (parsed.isMatch ? 'Aderência detectada pela IA' : 'Incompatível com o perfil')),
-    };
+    return this.aiClient.generateStructuredJson<AiMatchEvaluationResult>(
+      systemPrompt,
+      userPrompt,
+      fallback,
+    );
   }
 
   /**
-   * Avaliador semântico estruturado para análise sem dependência de API externa (zero hardcode de cargos)
+   * Avaliador semântico estruturado para análise sem dependência de API externa
    */
   private evaluateWithSemanticAnalyzer(
     profile: CandidateProfileForAi,
