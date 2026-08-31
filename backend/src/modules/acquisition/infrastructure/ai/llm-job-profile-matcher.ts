@@ -5,13 +5,13 @@ import {
   JobDataForAi,
   AiMatchEvaluationResult,
 } from '../../application/ports/job-profile-ai-matcher.port';
-import { OpenRouterAiClient } from '@shared/infrastructure/ai/openrouter-ai.client';
+import { NineRouterAiClient } from '@shared/infrastructure/ai/ninerouter-ai.client';
 import { SanitizedLogger } from '@shared/infrastructure/logger/sanitized-logger.service';
 
 @Injectable()
 export class LlmJobProfileMatcher implements JobProfileAiMatcher {
   constructor(
-    private readonly aiClient: OpenRouterAiClient,
+    private readonly aiClient: NineRouterAiClient,
     private readonly logger?: SanitizedLogger,
   ) {}
 

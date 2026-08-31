@@ -14,7 +14,7 @@ import { JOB_PROFILE_AI_MATCHER } from './application/ports/job-profile-ai-match
 import { PrismaCrawlRunsRepository } from './infrastructure/prisma-crawl-runs.repository';
 import { MockOrHttpJobCollectorClient } from './infrastructure/clients/mock-or-http-job-collector.client';
 import { LlmJobProfileMatcher } from './infrastructure/ai/llm-job-profile-matcher';
-import { OpenRouterAiClient } from '@shared/infrastructure/ai/openrouter-ai.client';
+import { NineRouterAiClient } from '@shared/infrastructure/ai/ninerouter-ai.client';
 import { TenantDiscoveryProcessor } from './infrastructure/processors/tenant-discovery.processor';
 import { JobCollectionProcessor } from './infrastructure/processors/job-collection.processor';
 import { CatalogModule } from '../catalog/catalog.module';
@@ -44,7 +44,7 @@ import { PrismaTenantsRepository } from '../catalog/infrastructure/prisma-tenant
     GetRunUseCase,
     TenantDiscoveryProcessor,
     JobCollectionProcessor,
-    OpenRouterAiClient,
+    NineRouterAiClient,
     { provide: CRAWL_RUNS_REPOSITORY, useClass: PrismaCrawlRunsRepository },
     { provide: JOB_COLLECTOR_CLIENT, useClass: MockOrHttpJobCollectorClient },
     { provide: JOB_PROFILE_AI_MATCHER, useClass: LlmJobProfileMatcher },

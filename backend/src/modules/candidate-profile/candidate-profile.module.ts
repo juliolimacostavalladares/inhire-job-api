@@ -12,8 +12,8 @@ import { PROFILE_AI_EXTRACTOR } from './application/ports/profile-ai-extractor.p
 import { CANDIDATE_PROFILE_SERVICE } from './application/ports/candidate-profile-service.interface';
 import { PrismaCandidateProfileRepository } from './infrastructure/prisma-candidate-profile.repository';
 import { PrismaProfileImportAttemptsRepository } from './infrastructure/prisma-profile-import-attempts.repository';
-import { OpenRouterProfileAiExtractor } from './infrastructure/ai/openrouter-profile-ai-extractor';
-import { OpenRouterAiClient } from '@shared/infrastructure/ai/openrouter-ai.client';
+import { NineRouterProfileAiExtractor } from './infrastructure/ai/ninerouter-profile-ai-extractor';
+import { NineRouterAiClient } from '@shared/infrastructure/ai/ninerouter-ai.client';
 import { CandidateProfileFacade } from './infrastructure/candidate-profile-facade';
 import { ProfileAnalysisProcessor } from './infrastructure/processors/profile-analysis.processor';
 import { AuthModule } from '../auth/auth.module';
@@ -41,10 +41,10 @@ import { UuidGenerator } from '@shared/infrastructure/id-generator/uuid-generato
     AssessReadinessUseCase,
     ProcessProfileAnalysisUseCase,
     ProfileAnalysisProcessor,
-    OpenRouterAiClient,
+    NineRouterAiClient,
     { provide: CANDIDATE_PROFILE_REPOSITORY, useClass: PrismaCandidateProfileRepository },
     { provide: PROFILE_IMPORT_ATTEMPTS_REPOSITORY, useClass: PrismaProfileImportAttemptsRepository },
-    { provide: PROFILE_AI_EXTRACTOR, useClass: OpenRouterProfileAiExtractor },
+    { provide: PROFILE_AI_EXTRACTOR, useClass: NineRouterProfileAiExtractor },
     { provide: CANDIDATE_PROFILE_SERVICE, useClass: CandidateProfileFacade },
     { provide: ARTIFACT_STORAGE_PORT, useClass: InMemoryArtifactStorage },
     { provide: CLOCK_PORT, useClass: SystemClock },
