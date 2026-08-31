@@ -9,6 +9,8 @@ import { USERS_REPOSITORY } from '@modules/auth/application/ports/users.reposito
 import { SESSIONS_REPOSITORY } from '@modules/auth/application/ports/sessions.repository';
 import { CANDIDATE_PROFILE_REPOSITORY } from '@modules/candidate-profile/application/ports/candidate-profile.repository';
 import { PROFILE_IMPORT_ATTEMPTS_REPOSITORY } from '@modules/candidate-profile/application/ports/profile-import-attempts.repository';
+import { PROFILE_AI_EXTRACTOR } from '@modules/candidate-profile/application/ports/profile-ai-extractor.port';
+import { JOB_PROFILE_AI_MATCHER } from '@modules/acquisition/application/ports/job-profile-ai-matcher.port';
 import { TENANTS_REPOSITORY } from '@modules/catalog/application/ports/tenants.repository';
 import { JOBS_REPOSITORY } from '@modules/catalog/application/ports/jobs.repository';
 import { TAILORED_RESUMES_REPOSITORY } from '@modules/resume/application/ports/tailored-resumes.repository';
@@ -156,6 +158,27 @@ describe('HTTP API End-to-End Component Tests', () => {
       .useValue({
         save: async (l: AuditLog) => { auditLogs.push(l); return l; },
         findAll: async () => ({ items: auditLogs, total: auditLogs.length }),
+      })
+      .overrideProvider(PROFILE_AI_EXTRACTOR)
+      .useValue({
+        extractFromResumeText: async () => ({
+          fullName: 'Test Candidate',
+          headline: 'Software Engineer',
+          email: 'candidate@inhire.internal',
+          phone: '+5511999999999',
+          location: { city: 'São Paulo', state: 'SP', country: 'Brasil' },
+          skills: ['TypeScript', 'Node.js'],
+          experiences: [],
+          education: [],
+        }),
+      })
+      .overrideProvider(JOB_PROFILE_AI_MATCHER)
+      .useValue({
+        evaluateMatch: async () => ({
+          isMatch: true,
+          matchScore: 90,
+          reason: 'Test Mock Match',
+        }),
       })
       .compile();
 

@@ -17,9 +17,7 @@ export class NineRouterAiClient {
     return (
       process.env.NINEROUTER_KEY ||
       process.env.NINEROUTER_API_KEY ||
-      process.env.AI_API_KEY ||
-      process.env.OPENROUTER_API_KEY ||
-      process.env.OPENAI_API_KEY
+      process.env.AI_API_KEY
     );
   }
 
@@ -34,7 +32,6 @@ export class NineRouterAiClient {
   async generateStructuredJson<T>(
     systemPrompt: string,
     userPrompt: string,
-    fallbackValue?: T,
   ): Promise<T> {
     const baseUrl = this.getBaseUrl();
     const apiKey = this.getApiKey();
@@ -49,7 +46,7 @@ export class NineRouterAiClient {
     }
 
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 25000);
+    const timeout = setTimeout(() => controller.abort(), 30000);
 
     try {
       const res = await fetch(`${baseUrl}/v1/chat/completions`, {
@@ -76,20 +73,28 @@ export class NineRouterAiClient {
 
       const data = (await res.json()) as {
         choices?: Array<{ message?: { content?: string } }>;
+        error?: { message?: string };
       };
-      const content = data.choices?.[0]?.message?.content?.trim() || '{}';
-      const cleanJson = content.replace(/^```json\s*/i, '').replace(/\s*```$/i, '');
+
+      if (data.error) {
+        throw new Error(`9Router Error: ${data.error.message || 'Unknown error'}`);
+      }
+
+      const content = data.choices?.[0]?.message?.content?.trim();
+      if (!content) {
+        throw new Error('9Router returned empty content in AI response');
+      }
+
+      const cleanJson = content.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '');
       return JSON.parse(cleanJson) as T;
     } catch (err: unknown) {
       clearTimeout(timeout);
       if (this.logger) {
-        this.logger.warn(
-          `9Router AI call failed (${(err as Error).message}), using factual fallback`,
+        this.logger.error(
+          `9Router AI execution failed: ${(err as Error).message}`,
+          (err as Error).stack,
           'NineRouterAiClient',
         );
-      }
-      if (fallbackValue !== undefined) {
-        return fallbackValue;
       }
       throw err;
     }
