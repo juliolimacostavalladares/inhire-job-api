@@ -6,27 +6,35 @@ export class NineRouterAiClient {
   constructor(private readonly logger?: SanitizedLogger) {}
 
   getBaseUrl(): string {
-    return (
+    let url = (
       process.env.NINEROUTER_URL ||
       process.env.AI_BASE_URL ||
       'http://localhost:20128'
-    ).replace(/\/+$/, '');
+    ).trim().replace(/\/+$/, '');
+
+    // Se o usuário passou /v1 no final da URL, normalizar para evitar /v1/v1
+    if (url.endsWith('/v1')) {
+      url = url.slice(0, -3);
+    }
+    return url;
   }
 
   getApiKey(): string | undefined {
-    return (
+    const key = (
       process.env.NINEROUTER_KEY ||
       process.env.NINEROUTER_API_KEY ||
       process.env.AI_API_KEY
-    );
+    )?.trim();
+    return key || undefined;
   }
 
   getModel(): string {
-    return (
+    const model = (
       process.env.NINEROUTER_MODEL ||
       process.env.AI_MODEL ||
       'bzl/gemini-3.1-flash-lite-preview'
-    );
+    ).trim();
+    return model;
   }
 
   async generateStructuredJson<T>(
@@ -45,8 +53,17 @@ export class NineRouterAiClient {
       headers['Authorization'] = `Bearer ${apiKey}`;
     }
 
+    if (this.logger) {
+      this.logger.log(
+        {
+          message: `[9Router] Calling AI Gateway: endpoint=${baseUrl}/v1/chat/completions, model=${model}, hasAuth=${Boolean(apiKey)}`,
+        },
+        'NineRouterAiClient',
+      );
+    }
+
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 30000);
+    const timeout = setTimeout(() => controller.abort(), 45000);
 
     try {
       const res = await fetch(`${baseUrl}/v1/chat/completions`, {

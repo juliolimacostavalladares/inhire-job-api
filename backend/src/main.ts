@@ -1,3 +1,18 @@
+import * as dotenv from 'dotenv';
+import * as path from 'path';
+import * as fs from 'fs';
+
+// Carregar variáveis de ambiente (.env e .env.local) imediatamente no início
+const bootEnvFiles = [
+  path.resolve(process.cwd(), '.env'),
+  path.resolve(process.cwd(), '.env.local'),
+];
+for (const file of bootEnvFiles) {
+  if (fs.existsSync(file)) {
+    dotenv.config({ path: file, override: true });
+  }
+}
+
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { HttpExceptionFilter } from './shared/infrastructure/filters/http-exception.filter';
