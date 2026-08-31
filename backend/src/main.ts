@@ -63,17 +63,29 @@ async function bootstrap() {
   logger.log({ message: `InHire Backend API listening on port ${port}` }, 'Bootstrap');
   logger.log({ message: `BullMQ Dashboard running at http://localhost:${port}/admin/queues` }, 'Bootstrap');
 
-  // Hot-reload de variáveis de ambiente quando o arquivo .env for alterado
-  if (process.env.NODE_ENV !== 'production') {
-    const fs = await import('fs');
-    const path = await import('path');
-    const dotenv = await import('dotenv');
-    const envPath = path.resolve(process.cwd(), '.env');
-    if (fs.existsSync(envPath)) {
-      fs.watchFile(envPath, { interval: 500 }, () => {
-        dotenv.config({ path: envPath, override: true });
+  // Hot-reload de variáveis de ambiente (.env, .env.local, .env.development)
+  const fs = await import('fs');
+  const path = await import('path');
+  const dotenv = await import('dotenv');
+
+  const possibleEnvFiles = [
+    path.resolve(process.cwd(), '.env'),
+    path.resolve(process.cwd(), '.env.local'),
+    path.resolve(process.cwd(), '.env.development'),
+    path.resolve(process.cwd(), '.env.development.local'),
+    path.resolve(__dirname, '../.env'),
+    path.resolve(__dirname, '../../.env'),
+  ];
+
+  const activeWatchedFiles = new Set<string>();
+
+  for (const envFile of possibleEnvFiles) {
+    if (fs.existsSync(envFile) && !activeWatchedFiles.has(envFile)) {
+      activeWatchedFiles.add(envFile);
+      fs.watchFile(envFile, { interval: 500 }, () => {
+        dotenv.config({ path: envFile, override: true });
         logger.log(
-          { message: '♻️ .env atualizado com sucesso! Novas variáveis recarregadas em tempo de execução.' },
+          { message: `♻️ Arquivo de ambiente (${path.basename(envFile)}) modificado! Variáveis recarregadas em tempo de execução.` },
           'Bootstrap',
         );
       });
