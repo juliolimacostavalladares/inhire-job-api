@@ -20,6 +20,7 @@ import {
   GetApplicationAttemptsUseCase,
   QueueApplicationDto,
 } from '../application/use-cases/application-use-cases';
+import { JobApplicationProcessor } from '../infrastructure/processors/job-application.processor';
 import { IdempotencyGuard } from '@shared/infrastructure/guards/idempotency.guard';
 
 @Controller('v1')
@@ -30,6 +31,7 @@ export class ApplicationsController {
     private readonly getApplicationUseCase: GetApplicationUseCase,
     private readonly listApplicationsUseCase: ListApplicationsUseCase,
     private readonly getApplicationAttemptsUseCase: GetApplicationAttemptsUseCase,
+    private readonly _processor: JobApplicationProcessor,
   ) {}
 
   @Post('jobs/:jobId/applications')

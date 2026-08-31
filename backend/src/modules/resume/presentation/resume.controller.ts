@@ -9,6 +9,7 @@ import {
   GetResumeGenerationUseCase,
   DownloadResumeArtifactUseCase,
 } from '../application/use-cases/resume-use-cases';
+import { ResumeGenerationProcessor } from '../infrastructure/processors/resume-generation.processor';
 import { IdempotencyGuard } from '@shared/infrastructure/guards/idempotency.guard';
 
 @Controller('v1')
@@ -19,6 +20,7 @@ export class ResumeController {
     private readonly getResumeByJobUseCase: GetResumeByJobUseCase,
     private readonly getResumeGenerationUseCase: GetResumeGenerationUseCase,
     private readonly downloadResumeArtifactUseCase: DownloadResumeArtifactUseCase,
+    private readonly _processor: ResumeGenerationProcessor,
   ) {}
 
   @Post('jobs/:jobId/resumes')

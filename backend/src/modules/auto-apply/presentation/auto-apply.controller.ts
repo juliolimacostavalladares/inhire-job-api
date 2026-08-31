@@ -7,6 +7,7 @@ import {
   UpdatePolicyUseCase,
   ListDecisionsUseCase,
 } from '../application/use-cases/auto-apply-use-cases';
+import { AutoApplyProcessor } from '../infrastructure/processors/auto-apply.processor';
 import { IdempotencyGuard } from '@shared/infrastructure/guards/idempotency.guard';
 
 @Controller('v1/me')
@@ -16,6 +17,7 @@ export class AutoApplyController {
     private readonly getPolicyUseCase: GetPolicyUseCase,
     private readonly updatePolicyUseCase: UpdatePolicyUseCase,
     private readonly listDecisionsUseCase: ListDecisionsUseCase,
+    private readonly _processor: AutoApplyProcessor,
   ) {}
 
   @Get('auto-apply-policy')
