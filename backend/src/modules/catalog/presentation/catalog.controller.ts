@@ -109,7 +109,6 @@ export class CatalogController {
     const parsedTags = tags ? tags.split(',').map((t) => t.trim()).filter(Boolean) : undefined;
     return this.listJobsUseCase.execute({
       tenantSlug: idOrSlug,
-      tenantId: idOrSlug,
       search: search || q,
       title,
       workplaceType,

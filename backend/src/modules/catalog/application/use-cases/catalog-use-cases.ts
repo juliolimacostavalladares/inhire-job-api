@@ -20,10 +20,18 @@ export class ListJobsUseCase {
 
   async execute(filter?: ExtendedFindJobsFilter): Promise<{ items: Job[]; total: number }> {
     let targetTenantId = filter?.tenantId;
-    if (!targetTenantId && filter?.tenantSlug && this.tenantsRepo) {
-      const tenant = await this.tenantsRepo.findBySlug(filter.tenantSlug);
-      if (tenant) {
-        targetTenantId = tenant.id;
+    if (this.tenantsRepo) {
+      if (filter?.tenantSlug) {
+        const tenant = await this.tenantsRepo.findBySlug(filter.tenantSlug);
+        if (tenant) targetTenantId = tenant.id;
+      } else if (filter?.tenantId) {
+        const tenantById = await this.tenantsRepo.findById(filter.tenantId);
+        if (tenantById) {
+          targetTenantId = tenantById.id;
+        } else {
+          const tenantBySlug = await this.tenantsRepo.findBySlug(filter.tenantId);
+          if (tenantBySlug) targetTenantId = tenantBySlug.id;
+        }
       }
     }
 
