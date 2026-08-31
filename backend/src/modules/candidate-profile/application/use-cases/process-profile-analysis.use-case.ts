@@ -51,8 +51,16 @@ export class ProcessProfileAnalysisUseCase {
         resumeText = pdfBuffer.toString('utf-8');
       }
 
-      // 3. AI extraction of structured candidate profile attributes
+      // 3. AI extraction of structured candidate profile attributes and search terms
       const extracted = await this.aiExtractor.extractFromResumeText(resumeText);
+
+      const candidateSearchTerms = extracted.searchTerms && extracted.searchTerms.length > 0
+        ? extracted.searchTerms
+        : [
+            ...(extracted.headline ? extracted.headline.split(/[,|/•-]/).map((s) => s.trim()) : []),
+            ...(extracted.skills || []),
+            ...(extracted.experiences || []).map((e) => e.role),
+          ].filter(Boolean);
 
       // 4. Update candidate profile with all extracted attributes
       profile.update({
@@ -63,6 +71,7 @@ export class ProcessProfileAnalysisUseCase {
         phone: extracted.phone || profile.phone,
         location: extracted.location || profile.location,
         skills: extracted.skills && extracted.skills.length > 0 ? extracted.skills : profile.skills,
+        searchTerms: candidateSearchTerms.length > 0 ? candidateSearchTerms : profile.searchTerms,
         experiences: extracted.experiences && extracted.experiences.length > 0 ? extracted.experiences : profile.experiences,
         education: extracted.education && extracted.education.length > 0 ? extracted.education : profile.education,
       });
@@ -81,6 +90,7 @@ export class ProcessProfileAnalysisUseCase {
         operation: 'profile_analysis_completed',
         importId,
         userId,
+        searchTermsCount: candidateSearchTerms.length,
         isReady: readiness.ready,
         missingFields: readiness.missingFields,
       }, 'ProcessProfileAnalysisUseCase');

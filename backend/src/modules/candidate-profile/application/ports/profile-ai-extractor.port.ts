@@ -7,6 +7,7 @@ export interface ExtractedProfileData {
   phone?: string | null;
   location?: LocationInfo | null;
   skills: string[];
+  searchTerms?: string[];
   experiences?: ExperienceInfo[] | null;
   education?: EducationInfo[] | null;
 }

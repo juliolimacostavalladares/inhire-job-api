@@ -162,6 +162,7 @@ export class ProcessJobCollectionUseCase {
         select: {
           headline: true,
           skills: true,
+          searchTerms: true,
           experiences: true,
         },
       });
@@ -173,61 +174,53 @@ export class ProcessJobCollectionUseCase {
         },
       });
 
-      const hasCandidateCriteria =
-        profiles.some((p) => p.headline || (p.skills && p.skills.length > 0)) ||
-        policies.some((pol) => pol.targetRoles && pol.targetRoles.length > 0);
+      // Coleta todas as palavras-chave e termos de busca gerados pela IA no perfil do candidato
+      const candidateSearchKeywords = new Set<string>();
+
+      for (const p of profiles) {
+        if (Array.isArray(p.searchTerms)) {
+          p.searchTerms.forEach((t) => candidateSearchKeywords.add(t.trim().toLowerCase()));
+        }
+        if (Array.isArray(p.skills)) {
+          p.skills.forEach((s) => candidateSearchKeywords.add(s.trim().toLowerCase()));
+        }
+        if (p.headline) {
+          p.headline
+            .split(/[,|/•\-–—+&]/)
+            .map((term) => term.trim().toLowerCase())
+            .filter((term) => term.length >= 3)
+            .forEach((term) => candidateSearchKeywords.add(term));
+        }
+      }
+
+      for (const pol of policies) {
+        if (Array.isArray(pol.targetRoles)) {
+          pol.targetRoles.forEach((r) => candidateSearchKeywords.add(r.trim().toLowerCase()));
+        }
+      }
+
+      const activeKeywords = Array.from(candidateSearchKeywords).filter((k) => k.length >= 2);
+      const hasCriteria = activeKeywords.length > 0;
 
       const observedExternalIds: string[] = [];
       let savedJobsCount = 0;
 
       for (const jobData of collection.jobs) {
-        let isRelevant = !hasCandidateCriteria;
+        let isRelevant = !hasCriteria;
 
-        if (hasCandidateCriteria) {
-          // Avaliação inteligente com Inteligência Artificial para cada perfil de candidato
-          for (const p of profiles) {
-            const aiResult = await this.aiMatcher.evaluateMatch(
-              {
-                headline: p.headline,
-                skills: p.skills || [],
-                experiences: (p.experiences as Array<{ role?: string; company?: string; description?: string }>) || [],
-              },
-              {
-                title: jobData.title,
-                description: jobData.description,
-                location: jobData.location,
-              },
-            );
-
-            if (aiResult.isMatch) {
-              isRelevant = true;
-              break;
+        if (hasCriteria) {
+          const haystack = `${jobData.title} ${jobData.description} ${jobData.location || ''}`.toLowerCase();
+          
+          isRelevant = activeKeywords.some((keyword) => {
+            if (keyword.length <= 3) {
+              const regex = new RegExp(`\\b${keyword.replace(/[.*+?^${}()|[\\]\\]/g, '\\$&')}\\b`, 'i');
+              return regex.test(haystack);
             }
-          }
-
-          if (!isRelevant) {
-            for (const pol of policies) {
-              const aiResult = await this.aiMatcher.evaluateMatch(
-                {
-                  skills: [],
-                  targetRoles: pol.targetRoles || [],
-                },
-                {
-                  title: jobData.title,
-                  description: jobData.description,
-                  location: jobData.location,
-                },
-              );
-
-              if (aiResult.isMatch) {
-                isRelevant = true;
-                break;
-              }
-            }
-          }
+            return haystack.includes(keyword);
+          });
         }
 
-        // Salva apenas as vagas que a Inteligência Artificial aprovou como compatíveis com o perfil
+        // Salva apenas as vagas compatíveis com os termos e especialidade do perfil
         if (isRelevant) {
           observedExternalIds.push(jobData.externalId);
           savedJobsCount++;

@@ -37,6 +37,7 @@ export interface CandidateProfileProps {
   experiences?: ExperienceInfo[] | null;
   education?: EducationInfo[] | null;
   skills: string[];
+  searchTerms?: string[];
   rawResumeArtifactId?: string | null;
   createdAt: Date;
   updatedAt: Date;
@@ -99,6 +100,10 @@ export class CandidateProfile {
     return this.props.skills;
   }
 
+  get searchTerms(): string[] {
+    return this.props.searchTerms || [];
+  }
+
   get rawResumeArtifactId(): string | null | undefined {
     return this.props.rawResumeArtifactId;
   }
@@ -153,6 +158,7 @@ export class CandidateProfile {
     if (data.experiences !== undefined) this.props.experiences = data.experiences;
     if (data.education !== undefined) this.props.education = data.education;
     if (data.skills !== undefined) this.props.skills = data.skills;
+    if (data.searchTerms !== undefined) this.props.searchTerms = data.searchTerms;
     if (data.status !== undefined) this.props.status = data.status;
     if (data.rawResumeArtifactId !== undefined) this.props.rawResumeArtifactId = data.rawResumeArtifactId;
 
@@ -205,6 +211,7 @@ export class CandidateProfile {
       experiences: [],
       education: [],
       skills: [],
+      searchTerms: [],
       rawResumeArtifactId: null,
       createdAt: now,
       updatedAt: now,

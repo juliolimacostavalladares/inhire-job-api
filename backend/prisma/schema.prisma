@@ -50,6 +50,7 @@ model CandidateProfile {
   experiences         Json?
   education           Json?
   skills              String[]
+  searchTerms         String[] @default([])
   rawResumeArtifactId String?
   createdAt           DateTime @default(now())
   updatedAt           DateTime @updatedAt

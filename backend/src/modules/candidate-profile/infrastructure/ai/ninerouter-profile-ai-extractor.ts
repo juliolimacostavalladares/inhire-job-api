@@ -18,6 +18,7 @@ interface RawAiProfileResponse {
     country?: string | null;
   } | null;
   skills?: string[];
+  searchTerms?: string[];
   experiences?: Array<{
     company?: string;
     role?: string;
@@ -44,13 +45,15 @@ export class NineRouterProfileAiExtractor implements ProfileAiExtractor {
   async extractFromResumeText(resumeText: string): Promise<ExtractedProfileData> {
     const systemPrompt = `Você é um motor de Inteligência Artificial especialista em análise e extração estruturada de currículos profissionais via 9Router.
 Analise o texto integral do documento e extraia com precisão rigorosa todas as informações do candidato em formato JSON estruturado.
+Gere também uma lista de termos de busca inteligentes ("searchTerms") com palavras-chave, cargos e tecnologias centrais do perfil para busca de vagas no mercado.
 
 DIRETRIZES FUNDAMENTAIS (ADR-0011 / CAND-FR-08):
 1. NUNCA invente fatos, cargos, cursos, notas ou localidades que não estejam explicitamente no texto.
 2. Se um campo não estiver no texto, defina-o como null ou array vazio [].
 3. Em perfis do LinkedIn ou documentos estruturados, ignore títulos de seções secundárias como sendo o nome: identifique o Nome Completo real do candidato no cabeçalho principal do perfil.
 4. Extraia todas as tecnologias, ferramentas e linguagens mencionadas no campo skills.
-5. Retorne ESTRITAMENTE um objeto JSON válido (sem blocos de texto adicionais).`;
+5. Em searchTerms, inclua as palavras-chave prioritárias para correspondência com vagas de emprego (ex: ["Frontend", "Front-end", "React", "TypeScript", "Next.js", "Software Engineer"]).
+6. Retorne ESTRITAMENTE um objeto JSON válido (sem blocos de texto adicionais).`;
 
     const userPrompt = `Analise o texto do currículo abaixo e extraia todos os atributos do perfil do candidato:
 
@@ -71,6 +74,7 @@ Retorne exatamente a seguinte estrutura JSON:
     "country": string | null
   } | null,
   "skills": ["string"],
+  "searchTerms": ["string"],
   "experiences": [
     {
       "company": "string",
@@ -125,17 +129,30 @@ Retorne exatamente a seguinte estrutura JSON:
             institution: String(ed.institution),
             degree: ed.degree || undefined,
             field: ed.field || undefined,
-            graduationYear: ed.graduationYear ? Number(ed.graduationYear) : undefined,
+            graduationYear: ed.graduationYear || undefined,
           }))
       : [];
 
+    const skills: string[] = Array.isArray(parsed.skills)
+      ? parsed.skills.map((s) => String(s).trim()).filter(Boolean)
+      : [];
+
+    const searchTerms: string[] = Array.isArray(parsed.searchTerms) && parsed.searchTerms.length > 0
+      ? parsed.searchTerms.map((s) => String(s).trim()).filter(Boolean)
+      : [
+          ...(parsed.headline ? parsed.headline.split(/[,|/•-]/).map((s) => s.trim()) : []),
+          ...skills,
+          ...experiences.map((e) => e.role),
+        ].filter(Boolean);
+
     return {
-      fullName: parsed.fullName || null,
-      headline: parsed.headline || null,
-      email: parsed.email || null,
-      phone: parsed.phone || null,
+      fullName: parsed.fullName?.trim() || null,
+      headline: parsed.headline?.trim() || null,
+      email: parsed.email?.trim() || null,
+      phone: parsed.phone?.trim() || null,
       location,
-      skills: Array.isArray(parsed.skills) ? parsed.skills.filter(Boolean) : [],
+      skills,
+      searchTerms,
       experiences,
       education,
     };
