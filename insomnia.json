@@ -368,6 +368,39 @@
       "_type": "request"
     },
     {
+      "_id": "req_catalog_list_tenants",
+      "parentId": "fld_catalog",
+      "modified": 1788180000000,
+      "created": 1788180000000,
+      "url": "{{ _.base_url }}/v1/tenants",
+      "name": "5. Listar Empresas/Tenants do Catálogo",
+      "method": "GET",
+      "metaSortKey": 405,
+      "_type": "request"
+    },
+    {
+      "_id": "req_catalog_get_tenant",
+      "parentId": "fld_catalog",
+      "modified": 1788180000000,
+      "created": 1788180000000,
+      "url": "{{ _.base_url }}/v1/tenants/{{ _.tenant_id }}",
+      "name": "6. Obter Detalhes da Empresa/Tenant (por ID ou Slug)",
+      "method": "GET",
+      "metaSortKey": 406,
+      "_type": "request"
+    },
+    {
+      "_id": "req_catalog_list_tenant_jobs",
+      "parentId": "fld_catalog",
+      "modified": 1788180000000,
+      "created": 1788180000000,
+      "url": "{{ _.base_url }}/v1/tenants/{{ _.tenant_id }}/jobs",
+      "name": "7. Listar Vagas de uma Empresa/Tenant",
+      "method": "GET",
+      "metaSortKey": 407,
+      "_type": "request"
+    },
+    {
       "_id": "fld_acquisition",
       "parentId": "wrk_inhire_api",
       "modified": 1788180000000,

@@ -1,4 +1,4 @@
-import { Injectable, Inject } from '@nestjs/common';
+import { Injectable, Inject, Optional } from '@nestjs/common';
 import { JOBS_REPOSITORY, JobsRepository, FindJobsFilter } from '../ports/jobs.repository';
 import { TENANTS_REPOSITORY, TenantsRepository } from '../ports/tenants.repository';
 import { Job, JobSnapshot, FormFieldSchema } from '../../domain/job.entity';
@@ -7,12 +7,30 @@ import { ID_GENERATOR_PORT, IdGenerator } from '@shared/domain/ports/id-generato
 import { CLOCK_PORT, Clock } from '@shared/domain/ports/clock.port';
 import { AppError } from '@shared/domain/errors/app-error';
 
+export interface ExtendedFindJobsFilter extends FindJobsFilter {
+  tenantSlug?: string;
+}
+
 @Injectable()
 export class ListJobsUseCase {
-  constructor(@Inject(JOBS_REPOSITORY) private readonly jobsRepo: JobsRepository) {}
+  constructor(
+    @Inject(JOBS_REPOSITORY) private readonly jobsRepo: JobsRepository,
+    @Optional() @Inject(TENANTS_REPOSITORY) private readonly tenantsRepo?: TenantsRepository,
+  ) {}
 
-  async execute(filter?: FindJobsFilter): Promise<{ items: Job[]; total: number }> {
-    return this.jobsRepo.findAll(filter);
+  async execute(filter?: ExtendedFindJobsFilter): Promise<{ items: Job[]; total: number }> {
+    let targetTenantId = filter?.tenantId;
+    if (!targetTenantId && filter?.tenantSlug && this.tenantsRepo) {
+      const tenant = await this.tenantsRepo.findBySlug(filter.tenantSlug);
+      if (tenant) {
+        targetTenantId = tenant.id;
+      }
+    }
+
+    return this.jobsRepo.findAll({
+      ...filter,
+      tenantId: targetTenantId,
+    });
   }
 }
 
@@ -169,7 +187,7 @@ export class CloseMissingJobsUseCase {
 export class ListTenantsUseCase {
   constructor(@Inject(TENANTS_REPOSITORY) private readonly tenantsRepo: TenantsRepository) {}
 
-  async execute(filter?: { isActive?: boolean; page?: number; limit?: number }): Promise<{ items: Tenant[]; total: number }> {
+  async execute(filter?: { isActive?: boolean; search?: string; page?: number; limit?: number }): Promise<{ items: Tenant[]; total: number }> {
     return this.tenantsRepo.findAll(filter);
   }
 }

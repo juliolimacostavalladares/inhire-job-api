@@ -27,7 +27,16 @@ GET não agenda trabalho nem altera estado.
 
 ## Catalog
 
-`GET /jobs`, `GET /jobs/:id`, `GET /jobs/:id/application-form`, `GET /tenants`, `GET /tenants/:id`. Escritas de Tenant exigem ADMIN. Job devolve `url` exatamente como persistida.
+| Método/path                     | Auth    | Sucesso                                     | Descrição                                                              |
+| ------------------------------- | ------- | ------------------------------------------- | ---------------------------------------------------------------------- |
+| `GET /tenants`                  | público | `200 {items: Tenant[], total: number}`      | Lista todas as empresas ativas descobertas (`?page`, `?limit`, `?search`) |
+| `GET /tenants/:idOrSlug`        | público | `200 Tenant`                                | Consulta detalhes de uma empresa por ID ou slug                         |
+| `GET /tenants/:idOrSlug/jobs`   | público | `200 {items: Job[], total: number}`         | Lista todas as vagas publicadas de uma empresa específica              |
+| `GET /jobs`                     | público | `200 {items: Job[], total: number}`         | Lista vagas do catálogo (`?tenantId`, `?tenantSlug`, `?search`, `?page`, `?limit`) |
+| `GET /jobs/:id`                 | público | `200 Job`                                   | Consulta detalhes da vaga com snapshot e `url` canônica byte-a-byte    |
+| `GET /jobs/:id/application-form`| público | `200 FormFieldSchema[]`                     | Obtém o formulário oficial de candidatura da vaga                      |
+
+Escritas de Tenant exigem ADMIN. Job devolve `url` exatamente como persistida.
 
 ## Resume
 

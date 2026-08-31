@@ -15,12 +15,14 @@ export class CatalogController {
   @HttpCode(HttpStatus.OK)
   async listJobs(
     @Query('tenantId') tenantId?: string,
+    @Query('tenantSlug') tenantSlug?: string,
     @Query('search') search?: string,
     @Query('page') page?: string,
     @Query('limit') limit?: string,
   ) {
     return this.listJobsUseCase.execute({
       tenantId,
+      tenantSlug,
       search,
       page: page ? parseInt(page, 10) : 1,
       limit: limit ? parseInt(limit, 10) : 50,
@@ -59,17 +61,37 @@ export class CatalogController {
   async listTenants(
     @Query('page') page?: string,
     @Query('limit') limit?: string,
+    @Query('search') search?: string,
   ) {
     return this.listTenantsUseCase.execute({
       isActive: true,
+      search,
       page: page ? parseInt(page, 10) : 1,
-      limit: limit ? parseInt(limit, 10) : 50,
+      limit: limit ? parseInt(limit, 10) : 100,
     });
   }
 
-  @Get('tenants/:id')
+  @Get('tenants/:idOrSlug')
   @HttpCode(HttpStatus.OK)
-  async getTenant(@Param('id') id: string) {
-    return this.getTenantUseCase.execute(id);
+  async getTenant(@Param('idOrSlug') idOrSlug: string) {
+    return this.getTenantUseCase.execute(idOrSlug);
+  }
+
+  @Get('tenants/:idOrSlug/jobs')
+  @HttpCode(HttpStatus.OK)
+  async listTenantJobs(
+    @Param('idOrSlug') idOrSlug: string,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+    @Query('search') search?: string,
+  ) {
+    return this.listJobsUseCase.execute({
+      tenantSlug: idOrSlug,
+      tenantId: idOrSlug,
+      search,
+      page: page ? parseInt(page, 10) : 1,
+      limit: limit ? parseInt(limit, 10) : 50,
+      status: 'PUBLISHED',
+    });
   }
 }
