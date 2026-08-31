@@ -264,15 +264,21 @@
       "name": "4. Importar Currículo em PDF (Auto-salva import_attempt_id)",
       "method": "POST",
       "body": {
-        "mimeType": "application/json",
-        "text": "{\n  \"base64Pdf\": \"JVBERi0xLjQKJcTl8uXrCg==\"\n}"
+        "mimeType": "multipart/form-data",
+        "params": [
+          {
+            "name": "file",
+            "type": "file",
+            "fileName": "",
+            "description": "Selecione o arquivo PDF do seu currículo para envio"
+          }
+        ]
       },
       "headers": [
-        { "name": "Content-Type", "value": "application/json" },
         { "name": "Authorization", "value": "Bearer {{ _.candidate_token }}" },
         { "name": "Idempotency-Key", "value": "import-pdf-001" }
       ],
-      "afterResponseScript": "try {\n  const res = insomnia.response.json();\n  if (res.attemptId) {\n    insomnia.environment.set('import_attempt_id', res.attemptId);\n  }\n} catch (e) {\n  console.error('Error in after-response script', e);\n}",
+      "afterResponseScript": "try {\n  const res = insomnia.response.json();\n  const id = res.attemptId || res.importId;\n  if (id) {\n    insomnia.environment.set('import_attempt_id', id);\n  }\n} catch (e) {\n  console.error('Error in after-response script', e);\n}",
       "metaSortKey": 304,
       "_type": "request"
     },

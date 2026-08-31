@@ -11,7 +11,10 @@ import {
   HttpCode,
   HttpStatus,
   Headers,
+  UseInterceptors,
+  UploadedFile,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import { JwtAuthGuard } from '../../auth/presentation/guards/jwt-auth.guard';
 import { CurrentUser } from '../../auth/presentation/decorators/current-user.decorator';
 import { JwtPayload } from '../../auth/application/ports/token-service.port';
@@ -103,16 +106,35 @@ export class CandidateProfileController {
 
   @Post('profile/imports')
   @UseGuards(IdempotencyGuard)
+  @UseInterceptors(FileInterceptor('file'))
   @HttpCode(HttpStatus.ACCEPTED)
   async importProfile(
     @CurrentUser() user: JwtPayload,
-    @Body() body: { base64Pdf?: string; fileContent?: string },
+    @UploadedFile() file?: Express.Multer.File,
+    @Body() body?: { base64Pdf?: string; fileContent?: string },
     @Headers('x-correlation-id') correlationId?: string,
   ) {
-    const rawData = body.base64Pdf
-      ? Buffer.from(body.base64Pdf, 'base64')
-      : Buffer.from(body.fileContent || '%PDF-1.4 mock pdf content');
-    return this.importProfileUseCase.execute(user.sub, rawData, 'application/pdf', correlationId);
+    let rawData: Buffer;
+    let mimeType = 'application/pdf';
+
+    if (file && file.buffer) {
+      rawData = file.buffer;
+      mimeType = file.mimetype || 'application/pdf';
+    } else if (body?.base64Pdf) {
+      rawData = Buffer.from(body.base64Pdf, 'base64');
+    } else if (body?.fileContent) {
+      rawData = Buffer.from(body.fileContent);
+    } else {
+      rawData = Buffer.from('%PDF-1.4 empty resume');
+    }
+
+    const result = await this.importProfileUseCase.execute(user.sub, rawData, mimeType, correlationId);
+    return {
+      importId: result.importId,
+      attemptId: result.importId,
+      status: result.status,
+      location: result.location,
+    };
   }
 
   @Get('profile/imports/:id')
