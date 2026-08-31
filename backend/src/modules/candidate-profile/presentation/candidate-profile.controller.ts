@@ -23,6 +23,7 @@ import { UpdateProfileUseCase, UpdateProfileDto } from '../application/use-cases
 import { ImportProfileUseCase } from '../application/use-cases/import-profile.use-case';
 import { GetImportAttemptUseCase } from '../application/use-cases/get-import-attempt.use-case';
 import { AssessReadinessUseCase } from '../application/use-cases/assess-readiness.use-case';
+import { ProfileAnalysisProcessor } from '../infrastructure/processors/profile-analysis.processor';
 import { IdempotencyGuard } from '@shared/infrastructure/guards/idempotency.guard';
 
 @Controller('v1/me')
@@ -34,6 +35,7 @@ export class CandidateProfileController {
     private readonly importProfileUseCase: ImportProfileUseCase,
     private readonly getImportAttemptUseCase: GetImportAttemptUseCase,
     private readonly assessReadinessUseCase: AssessReadinessUseCase,
+    private readonly _processor: ProfileAnalysisProcessor,
   ) {}
 
   @Get('profile')

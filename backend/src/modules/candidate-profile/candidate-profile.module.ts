@@ -8,9 +8,11 @@ import { AssessReadinessUseCase } from './application/use-cases/assess-readiness
 import { ProcessProfileAnalysisUseCase } from './application/use-cases/process-profile-analysis.use-case';
 import { CANDIDATE_PROFILE_REPOSITORY } from './application/ports/candidate-profile.repository';
 import { PROFILE_IMPORT_ATTEMPTS_REPOSITORY } from './application/ports/profile-import-attempts.repository';
+import { PROFILE_AI_EXTRACTOR } from './application/ports/profile-ai-extractor.port';
 import { CANDIDATE_PROFILE_SERVICE } from './application/ports/candidate-profile-service.interface';
 import { PrismaCandidateProfileRepository } from './infrastructure/prisma-candidate-profile.repository';
 import { PrismaProfileImportAttemptsRepository } from './infrastructure/prisma-profile-import-attempts.repository';
+import { LlmProfileAiExtractor } from './infrastructure/ai/llm-profile-ai-extractor';
 import { CandidateProfileFacade } from './infrastructure/candidate-profile-facade';
 import { ProfileAnalysisProcessor } from './infrastructure/processors/profile-analysis.processor';
 import { AuthModule } from '../auth/auth.module';
@@ -40,6 +42,7 @@ import { UuidGenerator } from '@shared/infrastructure/id-generator/uuid-generato
     ProfileAnalysisProcessor,
     { provide: CANDIDATE_PROFILE_REPOSITORY, useClass: PrismaCandidateProfileRepository },
     { provide: PROFILE_IMPORT_ATTEMPTS_REPOSITORY, useClass: PrismaProfileImportAttemptsRepository },
+    { provide: PROFILE_AI_EXTRACTOR, useClass: LlmProfileAiExtractor },
     { provide: CANDIDATE_PROFILE_SERVICE, useClass: CandidateProfileFacade },
     { provide: ARTIFACT_STORAGE_PORT, useClass: InMemoryArtifactStorage },
     { provide: CLOCK_PORT, useClass: SystemClock },
