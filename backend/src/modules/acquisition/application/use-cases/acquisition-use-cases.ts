@@ -57,9 +57,10 @@ export class CreateCollectionRunUseCase {
   ) {}
 
   async execute(trigger: 'SCHEDULED' | 'ADMIN_MANUAL' = 'ADMIN_MANUAL', tenantId?: string, correlationId?: string): Promise<{ runId: string; status: string; totalTenants: number }> {
-    let tenants = (await this.tenantsRepo.findAll({ isActive: true, limit: 1000 })).items;
-    if (tenantId) {
-      tenants = tenants.filter((t) => t.id === tenantId || t.slug === tenantId);
+    let tenants = (await this.tenantsRepo.findAll({ isActive: true, limit: 5000 })).items;
+    const cleanTenantId = tenantId?.trim();
+    if (cleanTenantId && cleanTenantId.toLowerCase() !== 'all') {
+      tenants = tenants.filter((t) => t.id === cleanTenantId || t.slug.toLowerCase() === cleanTenantId.toLowerCase());
     }
 
     const runId = this.idGenerator.generate();

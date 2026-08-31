@@ -428,12 +428,33 @@
       "_type": "request"
     },
     {
-      "_id": "req_acq_collection",
+      "_id": "req_acq_collection_global",
       "parentId": "fld_acquisition",
       "modified": 1788180000000,
       "created": 1788180000000,
       "url": "{{ _.base_url }}/v1/runs/collection",
-      "name": "2. [Admin] Disparar Coleta de Vagas (Auto-salva crawl_run_id)",
+      "name": "2. [Admin] Disparar Coleta GLOBAL de Todas as Empresas (Auto-salva crawl_run_id)",
+      "method": "POST",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{}"
+      },
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" },
+        { "name": "Authorization", "value": "Bearer {{ _.admin_token }}" },
+        { "name": "Idempotency-Key", "value": "{% uuid 'v4' %}" }
+      ],
+      "afterResponseScript": "try {\n  const res = insomnia.response.json();\n  if (res.runId) {\n    insomnia.environment.set('crawl_run_id', res.runId);\n  }\n} catch (e) {\n  console.error('Error in after-response script', e);\n}",
+      "metaSortKey": 502,
+      "_type": "request"
+    },
+    {
+      "_id": "req_acq_collection_tenant",
+      "parentId": "fld_acquisition",
+      "modified": 1788180000000,
+      "created": 1788180000000,
+      "url": "{{ _.base_url }}/v1/runs/collection",
+      "name": "3. [Admin] Disparar Coleta de Empresa Específica (Auto-salva crawl_run_id)",
       "method": "POST",
       "body": {
         "mimeType": "application/json",
@@ -445,7 +466,7 @@
         { "name": "Idempotency-Key", "value": "{% uuid 'v4' %}" }
       ],
       "afterResponseScript": "try {\n  const res = insomnia.response.json();\n  if (res.runId) {\n    insomnia.environment.set('crawl_run_id', res.runId);\n  }\n} catch (e) {\n  console.error('Error in after-response script', e);\n}",
-      "metaSortKey": 502,
+      "metaSortKey": 503,
       "_type": "request"
     },
     {
