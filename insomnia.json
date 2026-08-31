@@ -1,0 +1,462 @@
+{
+  "_type": "export",
+  "__export_format": 4,
+  "__export_date": "2026-08-31T12:00:00.000Z",
+  "__export_source": "insomnia.desktop.app:v2023.5.8",
+  "resources": [
+    {
+      "_id": "wrk_inhire_api",
+      "parentId": null,
+      "modified": 1788180000000,
+      "created": 1788180000000,
+      "name": "InHire Backend API",
+      "description": "Especificação completa dos endpoints da API REST do InHire (Clean Architecture, RFC 7807, Idempotência e Automação Assíncrona)",
+      "scope": "collection",
+      "_type": "workspace"
+    },
+    {
+      "_id": "env_base",
+      "parentId": "wrk_inhire_api",
+      "modified": 1788180000000,
+      "created": 1788180000000,
+      "name": "Base Environment",
+      "data": {
+        "base_url": "http://localhost:3000",
+        "candidate_token": "",
+        "admin_token": "",
+        "job_id": "",
+        "tenant_id": "",
+        "application_id": ""
+      },
+      "dataPropertyOrder": {
+        "&": ["base_url", "candidate_token", "admin_token", "job_id", "tenant_id", "application_id"]
+      },
+      "color": null,
+      "isPrivate": false,
+      "metaSortKey": 1788180000000,
+      "_type": "environment"
+    },
+    {
+      "_id": "fld_health",
+      "parentId": "wrk_inhire_api",
+      "modified": 1788180000000,
+      "created": 1788180000000,
+      "name": "01 - Health & Observabilidade",
+      "description": "Probes de integridade e prontidão da aplicação e dependências (Postgres, Redis, Storage)",
+      "environment": {},
+      "environmentPropertyOrder": null,
+      "metaSortKey": 100,
+      "_type": "request_group"
+    },
+    {
+      "_id": "req_health_live",
+      "parentId": "fld_health",
+      "modified": 1788180000000,
+      "created": 1788180000000,
+      "url": "{{ _.base_url }}/health/live",
+      "name": "Liveness Probe",
+      "description": "Verifica se o processo HTTP do backend está respondendo",
+      "method": "GET",
+      "body": {},
+      "parameters": [],
+      "headers": [],
+      "authentication": {},
+      "metaSortKey": 101,
+      "_type": "request"
+    },
+    {
+      "_id": "req_health_ready",
+      "parentId": "fld_health",
+      "modified": 1788180000000,
+      "created": 1788180000000,
+      "url": "{{ _.base_url }}/health/ready",
+      "name": "Readiness Probe",
+      "description": "Verifica se o banco PostgreSQL e filas Redis estão UP e prontos para tráfego",
+      "method": "GET",
+      "body": {},
+      "parameters": [],
+      "headers": [],
+      "authentication": {},
+      "metaSortKey": 102,
+      "_type": "request"
+    },
+    {
+      "_id": "fld_auth",
+      "parentId": "wrk_inhire_api",
+      "modified": 1788180000000,
+      "created": 1788180000000,
+      "name": "02 - Autenticação & Identidade",
+      "description": "Registro, login, rotação de tokens e revogação de sessões",
+      "environment": {},
+      "metaSortKey": 200,
+      "_type": "request_group"
+    },
+    {
+      "_id": "req_auth_register_cand",
+      "parentId": "fld_auth",
+      "modified": 1788180000000,
+      "created": 1788180000000,
+      "url": "{{ _.base_url }}/v1/auth/register",
+      "name": "Registrar Candidato",
+      "method": "POST",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"email\": \"candidato@exemplo.com\",\n  \"password\": \"SenhaForte123!\",\n  \"role\": \"CANDIDATE\"\n}"
+      },
+      "headers": [{ "name": "Content-Type", "value": "application/json" }],
+      "metaSortKey": 201,
+      "_type": "request"
+    },
+    {
+      "_id": "req_auth_register_admin",
+      "parentId": "fld_auth",
+      "modified": 1788180000000,
+      "created": 1788180000000,
+      "url": "{{ _.base_url }}/v1/auth/register",
+      "name": "Registrar Administrador",
+      "method": "POST",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"email\": \"admin@inhire.internal\",\n  \"password\": \"AdminSenha123!\",\n  \"role\": \"ADMIN\"\n}"
+      },
+      "headers": [{ "name": "Content-Type", "value": "application/json" }],
+      "metaSortKey": 202,
+      "_type": "request"
+    },
+    {
+      "_id": "req_auth_login",
+      "parentId": "fld_auth",
+      "modified": 1788180000000,
+      "created": 1788180000000,
+      "url": "{{ _.base_url }}/v1/auth/login",
+      "name": "Login",
+      "method": "POST",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"email\": \"candidato@exemplo.com\",\n  \"password\": \"SenhaForte123!\"\n}"
+      },
+      "headers": [{ "name": "Content-Type", "value": "application/json" }],
+      "metaSortKey": 203,
+      "_type": "request"
+    },
+    {
+      "_id": "req_auth_refresh",
+      "parentId": "fld_auth",
+      "modified": 1788180000000,
+      "created": 1788180000000,
+      "url": "{{ _.base_url }}/v1/auth/refresh",
+      "name": "Renovar Access Token (Refresh)",
+      "method": "POST",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"refreshToken\": \"<coloque_o_refresh_token_aqui>\"\n}"
+      },
+      "headers": [{ "name": "Content-Type", "value": "application/json" }],
+      "metaSortKey": 204,
+      "_type": "request"
+    },
+    {
+      "_id": "req_auth_me",
+      "parentId": "fld_auth",
+      "modified": 1788180000000,
+      "created": 1788180000000,
+      "url": "{{ _.base_url }}/v1/auth/me",
+      "name": "Obter Identidade Atual",
+      "method": "GET",
+      "headers": [{ "name": "Authorization", "value": "Bearer {{ _.candidate_token }}" }],
+      "metaSortKey": 205,
+      "_type": "request"
+    },
+    {
+      "_id": "fld_profile",
+      "parentId": "wrk_inhire_api",
+      "modified": 1788180000000,
+      "created": 1788180000000,
+      "name": "03 - Perfil do Candidato",
+      "description": "Gestão de perfil, avaliação de prontidão e importação de PDF",
+      "environment": {},
+      "metaSortKey": 300,
+      "_type": "request_group"
+    },
+    {
+      "_id": "req_profile_get",
+      "parentId": "fld_profile",
+      "modified": 1788180000000,
+      "created": 1788180000000,
+      "url": "{{ _.base_url }}/v1/me/profile",
+      "name": "Consultar Meu Perfil",
+      "method": "GET",
+      "headers": [{ "name": "Authorization", "value": "Bearer {{ _.candidate_token }}" }],
+      "metaSortKey": 301,
+      "_type": "request"
+    },
+    {
+      "_id": "req_profile_put",
+      "parentId": "fld_profile",
+      "modified": 1788180000000,
+      "created": 1788180000000,
+      "url": "{{ _.base_url }}/v1/me/profile",
+      "name": "Salvar / Atualizar Perfil",
+      "method": "PUT",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"fullName\": \"Carlos Eduardo Silva\",\n  \"email\": \"candidato@exemplo.com\",\n  \"phone\": \"+55 11 98765-4321\",\n  \"headline\": \"Senior Software Engineer\",\n  \"location\": {\n    \"country\": \"Brazil\",\n    \"city\": \"São Paulo\"\n  },\n  \"skills\": [\n    \"TypeScript\",\n    \"NestJS\",\n    \"PostgreSQL\",\n    \"Docker\",\n    \"BullMQ\"\n  ],\n  \"experiences\": [\n    {\n      \"company\": \"Tech Solutions\",\n      \"role\": \"Senior Backend Developer\",\n      \"startDate\": \"2022-01-01\",\n      \"description\": \"Desenvolvimento de microsserviços resilientes em Node.js\"\n    }\n  ],\n  \"education\": [\n    {\n      \"institution\": \"Universidade de São Paulo\",\n      \"degree\": \"Ciência da Computação\",\n      \"startDate\": \"2016-01-01\",\n      \"endDate\": \"2020-12-31\"\n    }\n  ]\n}"
+      },
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" },
+        { "name": "Authorization", "value": "Bearer {{ _.candidate_token }}" },
+        { "name": "Idempotency-Key", "value": "prof-update-001" }
+      ],
+      "metaSortKey": 302,
+      "_type": "request"
+    },
+    {
+      "_id": "req_profile_readiness",
+      "parentId": "fld_profile",
+      "modified": 1788180000000,
+      "created": 1788180000000,
+      "url": "{{ _.base_url }}/v1/me/profile/readiness?purpose=SUBMISSION",
+      "name": "Avaliar Prontidão para Candidatura",
+      "method": "GET",
+      "headers": [{ "name": "Authorization", "value": "Bearer {{ _.candidate_token }}" }],
+      "metaSortKey": 303,
+      "_type": "request"
+    },
+    {
+      "_id": "req_profile_import",
+      "parentId": "fld_profile",
+      "modified": 1788180000000,
+      "created": 1788180000000,
+      "url": "{{ _.base_url }}/v1/me/profile/imports",
+      "name": "Importar Currículo em PDF",
+      "method": "POST",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"base64Pdf\": \"JVBERi0xLjQKJcTl8uXrCg==\"\n}"
+      },
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" },
+        { "name": "Authorization", "value": "Bearer {{ _.candidate_token }}" },
+        { "name": "Idempotency-Key", "value": "import-pdf-001" }
+      ],
+      "metaSortKey": 304,
+      "_type": "request"
+    },
+    {
+      "_id": "fld_catalog",
+      "parentId": "wrk_inhire_api",
+      "modified": 1788180000000,
+      "created": 1788180000000,
+      "name": "04 - Catálogo & Vagas",
+      "description": "Vagas, empresas e administração do catálogo oficial",
+      "environment": {},
+      "metaSortKey": 400,
+      "_type": "request_group"
+    },
+    {
+      "_id": "req_catalog_list_jobs",
+      "parentId": "fld_catalog",
+      "modified": 1788180000000,
+      "created": 1788180000000,
+      "url": "{{ _.base_url }}/v1/jobs",
+      "name": "Listar Vagas Públicas",
+      "method": "GET",
+      "metaSortKey": 401,
+      "_type": "request"
+    },
+    {
+      "_id": "req_catalog_get_job",
+      "parentId": "fld_catalog",
+      "modified": 1788180000000,
+      "created": 1788180000000,
+      "url": "{{ _.base_url }}/v1/jobs/{{ _.job_id }}",
+      "name": "Obter Detalhes da Vaga (URL Canônica)",
+      "method": "GET",
+      "metaSortKey": 402,
+      "_type": "request"
+    },
+    {
+      "_id": "req_admin_create_tenant",
+      "parentId": "fld_catalog",
+      "modified": 1788180000000,
+      "created": 1788180000000,
+      "url": "{{ _.base_url }}/v1/admin/tenants",
+      "name": "[Admin] Cadastrar Tenant",
+      "method": "POST",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"slug\": \"acme-corp\",\n  \"name\": \"ACME Corporation\",\n  \"officialUrl\": \"https://acme.inhire.app/jobs\"\n}"
+      },
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" },
+        { "name": "Authorization", "value": "Bearer {{ _.admin_token }}" }
+      ],
+      "metaSortKey": 403,
+      "_type": "request"
+    },
+    {
+      "_id": "req_admin_create_job",
+      "parentId": "fld_catalog",
+      "modified": 1788180000000,
+      "created": 1788180000000,
+      "url": "{{ _.base_url }}/v1/admin/jobs",
+      "name": "[Admin] Publicar Vaga no Catálogo",
+      "method": "POST",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"tenantId\": \"{{ _.tenant_id }}\",\n  \"externalId\": \"job-tech-lead-01\",\n  \"title\": \"Staff Backend Engineer\",\n  \"url\": \"https://acme.inhire.app/jobs/job-tech-lead-01\",\n  \"description\": \"Arquitetura limpa em TypeScript, NestJS e BullMQ\",\n  \"location\": \"São Paulo, SP - Remoto\"\n}"
+      },
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" },
+        { "name": "Authorization", "value": "Bearer {{ _.admin_token }}" }
+      ],
+      "metaSortKey": 404,
+      "_type": "request"
+    },
+    {
+      "_id": "fld_applications",
+      "parentId": "wrk_inhire_api",
+      "modified": 1788180000000,
+      "created": 1788180000000,
+      "name": "05 - Candidaturas & Submissões",
+      "description": "Envio assíncrono (202 Accepted), polling de status e recibos de submissão",
+      "environment": {},
+      "metaSortKey": 500,
+      "_type": "request_group"
+    },
+    {
+      "_id": "req_app_submit",
+      "parentId": "fld_applications",
+      "modified": 1788180000000,
+      "created": 1788180000000,
+      "url": "{{ _.base_url }}/v1/jobs/{{ _.job_id }}/applications",
+      "name": "Aplicar para Vaga (202 Accepted)",
+      "method": "POST",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"resumeMode\": \"AI_TAILORED\"\n}"
+      },
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" },
+        { "name": "Authorization", "value": "Bearer {{ _.candidate_token }}" },
+        { "name": "Idempotency-Key", "value": "apply-job-tech-lead-001" }
+      ],
+      "metaSortKey": 501,
+      "_type": "request"
+    },
+    {
+      "_id": "req_app_get_status",
+      "parentId": "fld_applications",
+      "modified": 1788180000000,
+      "created": 1788180000000,
+      "url": "{{ _.base_url }}/v1/applications/{{ _.application_id }}",
+      "name": "Consultar Status da Candidatura",
+      "method": "GET",
+      "headers": [{ "name": "Authorization", "value": "Bearer {{ _.candidate_token }}" }],
+      "metaSortKey": 502,
+      "_type": "request"
+    },
+    {
+      "_id": "req_app_get_receipt",
+      "parentId": "fld_applications",
+      "modified": 1788180000000,
+      "created": 1788180000000,
+      "url": "{{ _.base_url }}/v1/applications/{{ _.application_id }}/receipt",
+      "name": "Obter Recibo Oficial de Submissão",
+      "method": "GET",
+      "headers": [{ "name": "Authorization", "value": "Bearer {{ _.candidate_token }}" }],
+      "metaSortKey": 503,
+      "_type": "request"
+    },
+    {
+      "_id": "fld_auto_apply",
+      "parentId": "wrk_inhire_api",
+      "modified": 1788180000000,
+      "created": 1788180000000,
+      "name": "06 - Auto-Apply & Políticas",
+      "description": "Configuração da política de candidatura automática e histórico de decisões",
+      "environment": {},
+      "metaSortKey": 600,
+      "_type": "request_group"
+    },
+    {
+      "_id": "req_auto_apply_get",
+      "parentId": "fld_auto_apply",
+      "modified": 1788180000000,
+      "created": 1788180000000,
+      "url": "{{ _.base_url }}/v1/me/auto-apply-policy",
+      "name": "Consultar Política de Auto-Apply",
+      "method": "GET",
+      "headers": [{ "name": "Authorization", "value": "Bearer {{ _.candidate_token }}" }],
+      "metaSortKey": 601,
+      "_type": "request"
+    },
+    {
+      "_id": "req_auto_apply_put",
+      "parentId": "fld_auto_apply",
+      "modified": 1788180000000,
+      "created": 1788180000000,
+      "url": "{{ _.base_url }}/v1/me/auto-apply-policy",
+      "name": "Salvar Política de Auto-Apply",
+      "method": "PUT",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"enabled\": true,\n  \"minScore\": 70,\n  \"dailyLimit\": 10,\n  \"timezone\": \"America/Sao_Paulo\",\n  \"targetRoles\": [\n    \"Staff Backend Engineer\",\n    \"Principal Software Architect\"\n  ],\n  \"targetLocations\": [\n    \"São Paulo\",\n    \"Remote\"\n  ]\n}"
+      },
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" },
+        { "name": "Authorization", "value": "Bearer {{ _.candidate_token }}" },
+        { "name": "Idempotency-Key", "value": "policy-save-001" }
+      ],
+      "metaSortKey": 602,
+      "_type": "request"
+    },
+    {
+      "_id": "req_auto_apply_decisions",
+      "parentId": "fld_auto_apply",
+      "modified": 1788180000000,
+      "created": 1788180000000,
+      "url": "{{ _.base_url }}/v1/me/auto-apply-decisions",
+      "name": "Listar Histórico de Decisões de Auto-Apply",
+      "method": "GET",
+      "headers": [{ "name": "Authorization", "value": "Bearer {{ _.candidate_token }}" }],
+      "metaSortKey": 603,
+      "_type": "request"
+    },
+    {
+      "_id": "fld_operations",
+      "parentId": "wrk_inhire_api",
+      "modified": 1788180000000,
+      "created": 1788180000000,
+      "name": "07 - Operações & Reconciliação",
+      "description": "Métricas agregadas e reconciliador do sistema",
+      "environment": {},
+      "metaSortKey": 700,
+      "_type": "request_group"
+    },
+    {
+      "_id": "req_ops_metrics",
+      "parentId": "fld_operations",
+      "modified": 1788180000000,
+      "created": 1788180000000,
+      "url": "{{ _.base_url }}/v1/operations/metrics",
+      "name": "[Admin] Métricas Operacionais e Filas",
+      "method": "GET",
+      "headers": [{ "name": "Authorization", "value": "Bearer {{ _.admin_token }}" }],
+      "metaSortKey": 701,
+      "_type": "request"
+    },
+    {
+      "_id": "req_ops_reconcile",
+      "parentId": "fld_operations",
+      "modified": 1788180000000,
+      "created": 1788180000000,
+      "url": "{{ _.base_url }}/v1/operations/reconcile",
+      "name": "[Admin] Disparar Reconciliação de Trabalhos Pendentes",
+      "method": "POST",
+      "headers": [{ "name": "Authorization", "value": "Bearer {{ _.admin_token }}" }],
+      "metaSortKey": 702,
+      "_type": "request"
+    }
+  ]
+}
