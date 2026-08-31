@@ -10,8 +10,10 @@ import {
 } from './application/use-cases/acquisition-use-cases';
 import { CRAWL_RUNS_REPOSITORY } from './application/ports/crawl-runs.repository';
 import { JOB_COLLECTOR_CLIENT } from './application/ports/job-collector.client';
+import { JOB_PROFILE_AI_MATCHER } from './application/ports/job-profile-ai-matcher.port';
 import { PrismaCrawlRunsRepository } from './infrastructure/prisma-crawl-runs.repository';
 import { MockOrHttpJobCollectorClient } from './infrastructure/clients/mock-or-http-job-collector.client';
+import { LlmJobProfileMatcher } from './infrastructure/ai/llm-job-profile-matcher';
 import { TenantDiscoveryProcessor } from './infrastructure/processors/tenant-discovery.processor';
 import { JobCollectionProcessor } from './infrastructure/processors/job-collection.processor';
 import { CatalogModule } from '../catalog/catalog.module';
@@ -43,6 +45,7 @@ import { PrismaTenantsRepository } from '../catalog/infrastructure/prisma-tenant
     JobCollectionProcessor,
     { provide: CRAWL_RUNS_REPOSITORY, useClass: PrismaCrawlRunsRepository },
     { provide: JOB_COLLECTOR_CLIENT, useClass: MockOrHttpJobCollectorClient },
+    { provide: JOB_PROFILE_AI_MATCHER, useClass: LlmJobProfileMatcher },
     { provide: TENANTS_REPOSITORY, useClass: PrismaTenantsRepository },
     { provide: CLOCK_PORT, useClass: SystemClock },
     { provide: ID_GENERATOR_PORT, useClass: UuidGenerator },

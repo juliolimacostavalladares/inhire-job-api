@@ -1,8 +1,11 @@
 import { Injectable, Inject } from '@nestjs/common';
 import { CRAWL_RUNS_REPOSITORY, CrawlRunsRepository } from '../ports/crawl-runs.repository';
-import { TENANTS_REPOSITORY } from '../../../catalog/application/ports/tenants.repository';
-import { TenantsRepository } from '../../../catalog/application/ports/tenants.repository';
+import { TENANTS_REPOSITORY, TenantsRepository } from '../../../catalog/application/ports/tenants.repository';
 import { JOB_COLLECTOR_CLIENT, JobCollectorClient } from '../ports/job-collector.client';
+import {
+  JOB_PROFILE_AI_MATCHER,
+  JobProfileAiMatcher,
+} from '../ports/job-profile-ai-matcher.port';
 import { CATALOG_SERVICE, CatalogService } from '../../../catalog/application/ports/catalog-service.interface';
 import { CrawlRun } from '../../domain/crawl-run.entity';
 import { BullMQService } from '@shared/infrastructure/bullmq/bullmq.service';
@@ -10,39 +13,6 @@ import { ID_GENERATOR_PORT, IdGenerator } from '@shared/domain/ports/id-generato
 import { CLOCK_PORT, Clock } from '@shared/domain/ports/clock.port';
 import { SanitizedLogger } from '@shared/infrastructure/logger/sanitized-logger.service';
 import { PrismaService } from '@shared/infrastructure/prisma/prisma.service';
-
-const STOP_WORDS = new Set([
-  'de', 'da', 'do', 'dos', 'das', 'em', 'para', 'com', 'sem', 'por', 'que', 'como',
-  'senior', 'sênior', 'pleno', 'junior', 'júnior', 'lead', 'staff', 'principal',
-  'especialista', 'analista', 'gerente', 'coordenador', 'pessoa', 'vaga', 'oportunidade',
-]);
-
-function textMatchesTerms(text: string, terms: string[]): boolean {
-  const combined = text.toLowerCase();
-  return terms.some((term) => {
-    const cleanTerm = term.toLowerCase().trim();
-    if (!cleanTerm) return false;
-    // Direct substring match
-    if (combined.includes(cleanTerm)) return true;
-    
-    // Substantive domain words match (excluding generic role prefixes/seniority)
-    const substantiveWords = cleanTerm
-      .split(/[\s/\\,\-]+/)
-      .map((w) => w.trim())
-      .filter((w) => w.length > 2 && !STOP_WORDS.has(w));
-
-    return substantiveWords.length > 0 && substantiveWords.some((w) => combined.includes(w));
-  });
-}
-
-function textMatchesSkills(text: string, skills: string[]): boolean {
-  const combined = text.toLowerCase();
-  return skills.some((skill) => {
-    const cleanSkill = skill.toLowerCase().trim();
-    if (!cleanSkill) return false;
-    return combined.includes(cleanSkill);
-  });
-}
 
 @Injectable()
 export class CreateDiscoveryRunUseCase {
@@ -152,6 +122,7 @@ export class ProcessJobCollectionUseCase {
     @Inject(CRAWL_RUNS_REPOSITORY) private readonly runsRepo: CrawlRunsRepository,
     @Inject(TENANTS_REPOSITORY) private readonly tenantsRepo: TenantsRepository,
     @Inject(JOB_COLLECTOR_CLIENT) private readonly collectorClient: JobCollectorClient,
+    @Inject(JOB_PROFILE_AI_MATCHER) private readonly aiMatcher: JobProfileAiMatcher,
     @Inject(CATALOG_SERVICE) private readonly catalogService: CatalogService,
     @Inject(ID_GENERATOR_PORT) private readonly idGenerator: IdGenerator,
     @Inject(CLOCK_PORT) private readonly clock: Clock,
@@ -212,31 +183,42 @@ export class ProcessJobCollectionUseCase {
         let isRelevant = !hasCandidateCriteria;
 
         if (hasCandidateCriteria) {
-          const jobText = `${jobData.title} ${jobData.description}`;
-
-          // Match contra os perfis dos candidatos
+          // Avaliação inteligente com Inteligência Artificial para cada perfil de candidato
           for (const p of profiles) {
-            if (p.headline && textMatchesTerms(jobText, [p.headline])) {
+            const aiResult = await this.aiMatcher.evaluateMatch(
+              {
+                headline: p.headline,
+                skills: p.skills || [],
+                experiences: (p.experiences as Array<{ role?: string; company?: string; description?: string }>) || [],
+              },
+              {
+                title: jobData.title,
+                description: jobData.description,
+                location: jobData.location,
+              },
+            );
+
+            if (aiResult.isMatch) {
               isRelevant = true;
               break;
-            }
-            if (p.skills && p.skills.length > 0 && textMatchesSkills(jobText, p.skills)) {
-              isRelevant = true;
-              break;
-            }
-            if (p.experiences && Array.isArray(p.experiences)) {
-              const roles = (p.experiences as Array<{ role?: string }>).map((e) => e.role).filter(Boolean) as string[];
-              if (roles.length > 0 && textMatchesTerms(jobText, roles)) {
-                isRelevant = true;
-                break;
-              }
             }
           }
 
-          // Match contra as políticas de auto-apply do candidato
           if (!isRelevant) {
             for (const pol of policies) {
-              if (pol.targetRoles && pol.targetRoles.length > 0 && textMatchesTerms(jobText, pol.targetRoles)) {
+              const aiResult = await this.aiMatcher.evaluateMatch(
+                {
+                  skills: [],
+                  targetRoles: pol.targetRoles || [],
+                },
+                {
+                  title: jobData.title,
+                  description: jobData.description,
+                  location: jobData.location,
+                },
+              );
+
+              if (aiResult.isMatch) {
                 isRelevant = true;
                 break;
               }
@@ -244,7 +226,7 @@ export class ProcessJobCollectionUseCase {
           }
         }
 
-        // Salva apenas as vagas que fazem sentido com o perfil do candidato
+        // Salva apenas as vagas que a Inteligência Artificial aprovou como compatíveis com o perfil
         if (isRelevant) {
           observedExternalIds.push(jobData.externalId);
           savedJobsCount++;
