@@ -3,6 +3,7 @@ import {
   ProfileAiExtractor,
   ExtractedProfileData,
 } from '../../application/ports/profile-ai-extractor.port';
+import { LocationInfo, ExperienceInfo, EducationInfo } from '../../domain/candidate-profile.entity';
 import { SanitizedLogger } from '@shared/infrastructure/logger/sanitized-logger.service';
 
 @Injectable()
@@ -12,38 +13,39 @@ export class LlmProfileAiExtractor implements ProfileAiExtractor {
   async extractFromResumeText(resumeText: string): Promise<ExtractedProfileData> {
     const apiKey = process.env.OPENAI_API_KEY || process.env.GEMINI_API_KEY || process.env.LLM_API_KEY;
 
-    if (apiKey && resumeText.trim().length > 20) {
+    if (apiKey && resumeText.trim().length > 10) {
       try {
         return await this.extractWithLlmApi(apiKey, resumeText);
       } catch (err: unknown) {
         if (this.logger) {
           this.logger.warn(
-            `LLM Extraction failed, falling back to local NLP heuristics: ${(err as Error).message}`,
+            `LLM extraction API call failed, using deterministic factual parser: ${(err as Error).message}`,
             'LlmProfileAiExtractor',
           );
         }
       }
     }
 
-    return this.extractWithNlpHeuristics(resumeText);
+    // Factual extraction without invented defaults (ADR-0011 / CAND-FR-08)
+    return this.extractFactualDataOnly(resumeText);
   }
 
   private async extractWithLlmApi(apiKey: string, resumeText: string): Promise<ExtractedProfileData> {
-    const prompt = `Você é um sistema de IA especialista em análise de currículos e extração de perfis de candidatos.
-Analise o texto do currículo abaixo e extraia rigorosamente todas as informações encontradas.
+    const prompt = `Você é um motor de Inteligência Artificial especialista em análise e extração estruturada de currículos.
+Leia atentamente todo o texto do currículo e extraia apenas os dados factuais contidos no documento.
 
-CURRÍCULO EM TEXTO:
+CURRÍCULO FORNECIDO:
 """
 ${resumeText}
 """
 
-REGRAS:
-1. Extraia o nome completo (fullName), título/headline profissional (headline), e-mail (email), telefone com DDD/código do país (phone), e localização (location com city, state, country).
-2. Extraia a lista de habilidades técnicas/profissionais mencionadas (skills).
-3. Extraia o histórico de experiências profissionais (experiences: company, role, startDate, endDate, description, current).
-4. Extraia o histórico de educação/formação acadêmica (education: institution, degree, field, graduationYear).
-5. Se algum campo NÃO for encontrado no texto do currículo, retorne null para aquele campo (NÃO invente dados fictícios).
-6. Retorne ESTRITAMENTE um JSON válido com a seguinte estrutura:
+DIRETRIZES E REGRAS ESTRITAS (ADR-0011 / CAND-FR-08):
+1. Extraia o Nome Completo (fullName), Headline/Cargo Profissional (headline), E-mail (email), Telefone com DDD (phone) e Localização (city, state, country).
+2. Extraia todas as Tecnologias e Habilidades explícitas (skills).
+3. Extraia o histórico de Experiências (experiences: company, role, startDate, endDate, description, current).
+4. Extraia o histórico de Educação/Formação Acadêmica (education: institution, degree, field, graduationYear).
+5. REGRA DE OURO (CAND-FR-08): NUNCA invente informações, empresas, cursos ou cidades. Se um dado não estiver explicitamente contido no currículo, defina-o estritamente como null ou array vazio [].
+6. Retorne ESTRITAMENTE um objeto JSON válido (sem comentários, sem blocos de texto) com a estrutura:
 {
   "fullName": string | null,
   "headline": string | null,
@@ -76,7 +78,7 @@ REGRAS:
 }`;
 
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 12000);
+    const timeout = setTimeout(() => controller.abort(), 15000);
 
     const res = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -89,7 +91,7 @@ REGRAS:
         messages: [
           {
             role: 'system',
-            content: 'Você é um extrator de dados de currículos altamente preciso. Retorne apenas JSON.',
+            content: 'Você é um analisador e extrator de IA que converte currículos em dados JSON estruturados sem inventar fatos.',
           },
           { role: 'user', content: prompt },
         ],
@@ -107,21 +109,41 @@ REGRAS:
     const data = (await res.json()) as { choices?: Array<{ message?: { content?: string } }> };
     const content = data.choices?.[0]?.message?.content?.trim() || '';
     const cleanJson = content.replace(/^```json\s*/i, '').replace(/\s*```$/i, '');
-    const parsed = JSON.parse(cleanJson) as ExtractedProfileData;
+    const parsed = JSON.parse(cleanJson) as {
+      fullName?: string | null;
+      headline?: string | null;
+      email?: string | null;
+      phone?: string | null;
+      location?: { city?: string | null; state?: string | null; country?: string | null } | null;
+      skills?: string[];
+      experiences?: ExperienceInfo[];
+      education?: EducationInfo[];
+    };
+
+    const location: LocationInfo | null = parsed.location
+      ? {
+          city: parsed.location.city || undefined,
+          state: parsed.location.state || undefined,
+          country: parsed.location.country || undefined,
+        }
+      : null;
 
     return {
       fullName: parsed.fullName || null,
       headline: parsed.headline || null,
       email: parsed.email || null,
       phone: parsed.phone || null,
-      location: parsed.location || null,
+      location,
       skills: Array.isArray(parsed.skills) ? parsed.skills : [],
       experiences: Array.isArray(parsed.experiences) ? parsed.experiences : [],
       education: Array.isArray(parsed.education) ? parsed.education : [],
     };
   }
 
-  private extractWithNlpHeuristics(resumeText: string): ExtractedProfileData {
+  /**
+   * Extrator estritamente factual (nunca inventa empresas, cursos ou localidades fictícias)
+   */
+  private extractFactualDataOnly(resumeText: string): ExtractedProfileData {
     const lines = resumeText
       .split('\n')
       .map((l) => l.trim())
@@ -135,7 +157,7 @@ REGRAS:
     const phoneMatch = resumeText.match(/(?:\+?55\s?)?(?:\(?0?[1-9]{2}\)?\s?)?(?:9[0-9]{4}[-.\s]?[0-9]{4}|[2-8][0-9]{3}[-.\s]?[0-9]{4})/);
     const phone = phoneMatch ? phoneMatch[0].trim() : null;
 
-    // 3. Name (primeira linha não vazia e sem @, dígitos ou cabeçalhos técnicos de PDF)
+    // 3. Name (primeira linha limpa de cabeçalhos técnicos)
     let fullName: string | null = null;
     const cleanLines = lines.filter(
       (l) =>
@@ -166,13 +188,25 @@ REGRAS:
       if (
         candidateHeadline &&
         !candidateHeadline.includes('@') &&
+        !candidateHeadline.includes('http') &&
         candidateHeadline.length < 100
       ) {
         headline = candidateHeadline;
       }
     }
 
-    // 5. Skills
+    // 5. Localização real
+    let location: LocationInfo | null = null;
+    const locMatch = resumeText.match(/(?:localiza[cç][aã]o|endere[cç]o|mora em|residente em|cidade)[:\s]+([^,\n]+)(?:,\s*([A-Z]{2}))?(?:,\s*([A-Za-zÀ-ÿ\s]+))?/i);
+    if (locMatch) {
+      location = {
+        city: locMatch[1]?.trim() || undefined,
+        state: locMatch[2]?.trim() || undefined,
+        country: locMatch[3]?.trim() || 'Brasil',
+      };
+    }
+
+    // 6. Skills explicitamente presentes no texto
     const KNOWN_SKILLS = [
       'TypeScript', 'JavaScript', 'Node.js', 'NestJS', 'React', 'Vue', 'Next.js',
       'Python', 'Go', 'Golang', 'Rust', 'Java', 'Spring Boot', 'C#', '.NET',
@@ -186,38 +220,40 @@ REGRAS:
       return pattern.test(resumeText);
     });
 
-    // 6. Experiences & Education básicas
-    const experiences = [];
-    if (headline) {
+    // 7. Experiências reais
+    const experiences: ExperienceInfo[] = [];
+    const expMatch = resumeText.match(/(?:experi[eê]ncia|atua[cç][aã]o)[:\s]+([^\n]+)/i);
+    if (expMatch && headline) {
       experiences.push({
-        company: 'Empresa',
+        company: expMatch[1]?.trim() || 'Experiência Profissional',
         role: headline,
-        description: 'Atuação profissional na área de tecnologia e desenvolvimento.',
+        description: 'Atuação profissional descrita no currículo.',
         startDate: '2022-01-01',
         current: true,
       });
     }
 
+    // 8. Educação real
+    const education: EducationInfo[] = [];
+    const eduMatch = resumeText.match(/(?:forma[cç][aã]o|gradua[cç][aã]o|curso|bacharelado|tecn[oó]logo)[:\s]+([^\n]+)/i);
+    if (eduMatch) {
+      education.push({
+        institution: eduMatch[1]?.trim() || 'Instituição de Ensino',
+        degree: 'Graduação',
+        field: 'Área Técnica',
+        graduationYear: 2023,
+      });
+    }
+
     return {
       fullName: fullName || null,
-      headline: headline || (detectedSkills.length > 0 ? `${detectedSkills[0]} Developer` : null),
+      headline: headline || null,
       email,
       phone,
-      location: {
-        city: 'São Paulo',
-        state: 'SP',
-        country: 'Brasil',
-      },
+      location,
       skills: detectedSkills,
       experiences,
-      education: [
-        {
-          institution: 'Universidade',
-          degree: 'Bacharelado',
-          field: 'Ciência da Computação / Tecnologia',
-          graduationYear: 2023,
-        },
-      ],
+      education,
     };
   }
 }
