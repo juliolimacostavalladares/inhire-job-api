@@ -2,54 +2,85 @@ import { Injectable } from '@nestjs/common';
 import { JobCollectorClient, CollectionResult, RawJobPayload } from '../../application/ports/job-collector.client';
 import { SanitizedLogger } from '@shared/infrastructure/logger/sanitized-logger.service';
 
+function slugify(text: string): string {
+  return (text || '')
+    .normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-zA-Z0-9 ]/g, '')
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, '-') || 'vaga';
+}
+
 @Injectable()
 export class MockOrHttpJobCollectorClient implements JobCollectorClient {
   constructor(private readonly logger?: SanitizedLogger) {}
 
   /**
-   * Descobre tenants públicos ativos na plataforma InHire
+   * Descobre tenants reais ativos com páginas de carreira na plataforma InHire
    */
   async discoverPublicTenants(): Promise<Array<{ slug: string; name: string; officialUrl: string }>> {
-    const knownTenants = [
-      { slug: 'nubank', name: 'Nubank', officialUrl: 'https://nubank.inhire.app/jobs' },
-      { slug: 'picpay', name: 'PicPay', officialUrl: 'https://picpay.inhire.app/vagas' },
-      { slug: 'inter', name: 'Banco Inter', officialUrl: 'https://inter.inhire.app/jobs' },
-      { slug: 'stone', name: 'Stone Pagamentos', officialUrl: 'https://stone.inhire.app/vagas' },
-      { slug: 'tech-corp', name: 'Tech Corp', officialUrl: 'https://techcorp.inhire.app/jobs' },
+    const candidateSlugs = [
+      'cora',
+      'dock',
+      'loggi',
+      'contabilizei',
+      'azion',
+      'takeblip',
+      'creditas',
+      'startse',
+      'dti',
     ];
 
     const discovered: Array<{ slug: string; name: string; officialUrl: string }> = [];
 
-    for (const t of knownTenants) {
+    for (const slug of candidateSlugs) {
       try {
         const controller = new AbortController();
-        const timeout = setTimeout(() => controller.abort(), 3000);
+        const timeout = setTimeout(() => controller.abort(), 4000);
 
-        const res = await fetch(t.officialUrl, {
-          method: 'HEAD',
+        const res = await fetch('https://api.inhire.app/job-posts/public/pages', {
           headers: {
-            'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 InHireCrawler/1.0',
+            'X-Tenant': slug,
+            'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko)',
           },
           signal: controller.signal,
         }).catch(() => null);
 
         clearTimeout(timeout);
 
-        if (res && (res.status === 200 || res.status === 301 || res.status === 302 || res.status === 403)) {
-          discovered.push(t);
-        } else {
-          discovered.push(t); // Keep standard curated tenants available
+        if (res && res.ok) {
+          const json = (await res.json().catch(() => null)) as { tenantName?: string; jobsPage?: unknown[] } | null;
+          if (json && json.tenantName) {
+            discovered.push({
+              slug,
+              name: json.tenantName,
+              officialUrl: `https://${slug}.inhire.app/vagas`,
+            });
+          }
         }
-      } catch {
-        discovered.push(t);
+      } catch (err: unknown) {
+        if (this.logger) {
+          this.logger.warn(`Failed probing InHire tenant ${slug}: ${(err as Error).message}`, 'JobCollectorClient');
+        }
       }
+    }
+
+    if (discovered.length === 0) {
+      // Fallback de segurança se houver bloqueio de rede externo
+      return [
+        { slug: 'cora', name: 'Cora', officialUrl: 'https://cora.inhire.app/vagas' },
+        { slug: 'dock', name: 'Dock', officialUrl: 'https://dock.inhire.app/vagas' },
+        { slug: 'loggi', name: 'Loggi', officialUrl: 'https://loggi.inhire.app/vagas' },
+        { slug: 'contabilizei', name: 'Contabilizei', officialUrl: 'https://contabilizei.inhire.app/vagas' },
+      ];
     }
 
     return discovered;
   }
 
   /**
-   * Coleta vagas reais diretamente da página oficial do Tenant na InHire
+   * Coleta vagas 100% reais diretamente da API pública oficial do InHire
    */
   async collectFromTenant(officialUrl: string): Promise<CollectionResult> {
     const parsed = new URL(officialUrl);
@@ -59,34 +90,51 @@ export class MockOrHttpJobCollectorClient implements JobCollectorClient {
 
     try {
       const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 5000);
+      const timeout = setTimeout(() => controller.abort(), 6000);
 
-      // 1. Tentar buscar API pública de vagas do InHire para este tenant
-      const publicApiUrl = `https://api.inhire.app/job-talents/public/jobs/developer?tenantSlug=${tenantSlug}`;
-      const apiRes = await fetch(publicApiUrl, {
+      const res = await fetch('https://api.inhire.app/job-posts/public/pages', {
         headers: {
-          'User-Agent': 'Mozilla/5.0 InHireJobBot/1.0',
-          'Accept': 'application/json, text/plain, */*',
+          'X-Tenant': tenantSlug,
+          'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko)',
         },
         signal: controller.signal,
       }).catch(() => null);
 
       clearTimeout(timeout);
 
-      if (apiRes && apiRes.ok) {
-        const data = await apiRes.json().catch(() => null);
-        if (Array.isArray(data)) {
-          for (const item of data) {
+      if (res && res.ok) {
+        const data = (await res.json().catch(() => null)) as {
+          tenantName?: string;
+          about?: string;
+          jobsPage?: Array<{
+            jobId: string;
+            displayName: string;
+            workplaceType?: string;
+            location?: string;
+            careerPageId?: string;
+          }>;
+        } | null;
+
+        if (data && Array.isArray(data.jobsPage) && data.jobsPage.length > 0) {
+          for (const item of data.jobsPage) {
+            if (!item.jobId || !item.displayName) continue;
+
+            const jobSlug = slugify(item.displayName);
+            const canonicalUrl = `https://${tenantSlug}.inhire.app/vagas/${item.jobId}/${jobSlug}`;
+            const locationStr = item.location ? `${item.location} (${item.workplaceType || 'Remoto'})` : (item.workplaceType || 'Remoto');
+
             collectedJobs.push({
-              externalId: String(item.id || item.jobId || item.code),
-              title: item.title || item.name || 'Software Engineer',
-              url: item.url || `https://${tenantSlug}.inhire.app/jobs/${item.id || item.code}`,
-              description: item.description || item.summary || 'Oportunidade oficial InHire',
-              location: item.location || item.workplace || 'São Paulo, SP / Remoto',
-              formSchema: item.formSchema || [
+              externalId: item.jobId,
+              title: item.displayName,
+              url: canonicalUrl,
+              description: `Vaga oficial publicada pela ${data.tenantName || tenantSlug} no portal InHire. Modalidade: ${item.workplaceType || 'Não informada'}. Localidade: ${locationStr}.`,
+              location: locationStr,
+              formSchema: [
                 { key: 'fullName', label: 'Nome Completo', type: 'text', required: true },
                 { key: 'email', label: 'E-mail', type: 'email', required: true },
                 { key: 'phone', label: 'Telefone', type: 'tel', required: true },
+                { key: 'city', label: 'Cidade', type: 'text', required: false },
+                { key: 'country', label: 'País', type: 'text', required: false },
                 { key: 'resume', label: 'Currículo (PDF)', type: 'file', required: true },
               ],
             });
@@ -96,50 +144,12 @@ export class MockOrHttpJobCollectorClient implements JobCollectorClient {
       }
     } catch (err: unknown) {
       if (this.logger) {
-        this.logger.warn(`Failed to query InHire public API for ${tenantSlug}, falling back to tenant catalog inspection: ${(err as Error).message}`, 'JobCollectorClient');
+        this.logger.error(`Error querying InHire official API for tenant ${tenantSlug}: ${(err as Error).message}`, (err as Error).stack, 'JobCollectorClient');
       }
     }
 
-    // 2. Se a API externa não respondeu JSON (SPA restrita ou Cloudflare ativo), gerar vagas reais baseadas na estrutura canônica do Tenant
-    if (collectedJobs.length === 0) {
-      const tenantName = tenantSlug.charAt(0).toUpperCase() + tenantSlug.slice(1);
-      collectedJobs.push(
-        {
-          externalId: `${tenantSlug}-eng-01`,
-          title: `Senior Backend Engineer - ${tenantName}`,
-          url: `https://${tenantSlug}.inhire.app/jobs/${tenantSlug}-eng-01`,
-          description: `Vaga para desenvolvimento de microsserviços de alta escala e sistemas distribuídos na ${tenantName}. Tecnologias: TypeScript, Node.js, NestJS, PostgreSQL, Redis, Clean Architecture e Cloud.`,
-          location: 'São Paulo, SP / Remoto (Brasil)',
-          formSchema: [
-            { key: 'fullName', label: 'Nome Completo', type: 'text', required: true },
-            { key: 'email', label: 'E-mail', type: 'email', required: true },
-            { key: 'phone', label: 'Telefone', type: 'tel', required: true },
-            { key: 'city', label: 'Cidade', type: 'text', required: true },
-            { key: 'country', label: 'País', type: 'text', required: true },
-            { key: 'resume', label: 'Currículo (PDF)', type: 'file', required: true },
-          ],
-        },
-        {
-          externalId: `${tenantSlug}-arch-02`,
-          title: `Principal Software Architect - ${tenantName}`,
-          url: `https://${tenantSlug}.inhire.app/jobs/${tenantSlug}-arch-02`,
-          description: `Liderança técnica e arquitetura de soluções corporativas resilientes na ${tenantName}. Foco em sistemas orientados a eventos, filas BullMQ e governança de dados.`,
-          location: 'Remoto (Brasil)',
-          formSchema: [
-            { key: 'fullName', label: 'Nome Completo', type: 'text', required: true },
-            { key: 'email', label: 'E-mail', type: 'email', required: true },
-            { key: 'phone', label: 'Telefone', type: 'tel', required: true },
-            { key: 'city', label: 'Cidade', type: 'text', required: true },
-            { key: 'country', label: 'País', type: 'text', required: true },
-            { key: 'resume', label: 'Currículo (PDF)', type: 'file', required: true },
-          ],
-        },
-      );
-      isConclusive = true;
-    }
-
     return {
-      isConclusive,
+      isConclusive: isConclusive || collectedJobs.length > 0,
       jobs: collectedJobs,
     };
   }

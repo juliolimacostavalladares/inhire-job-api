@@ -9,6 +9,9 @@ import {
   GetRunUseCase,
 } from '../application/use-cases/acquisition-use-cases';
 
+import { TenantDiscoveryProcessor } from '../infrastructure/processors/tenant-discovery.processor';
+import { JobCollectionProcessor } from '../infrastructure/processors/job-collection.processor';
+
 @Controller('v1/runs')
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles('ADMIN')
@@ -18,6 +21,8 @@ export class AcquisitionController {
     private readonly createCollectionRunUseCase: CreateCollectionRunUseCase,
     private readonly listRunsUseCase: ListRunsUseCase,
     private readonly getRunUseCase: GetRunUseCase,
+    private readonly discoveryProcessor: TenantDiscoveryProcessor,
+    private readonly collectionProcessor: JobCollectionProcessor,
   ) {}
 
   @Post('discovery')
