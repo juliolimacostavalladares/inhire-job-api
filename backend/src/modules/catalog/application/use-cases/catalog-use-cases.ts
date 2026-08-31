@@ -121,6 +121,9 @@ export class UpsertJobUseCase {
     url: string;
     description: string;
     location?: string;
+    workplaceType?: string;
+    contractType?: string;
+    tags?: string[];
     formSchema?: FormFieldSchema[];
   }): Promise<Job> {
     const tenant = await this.tenantsRepo.findById(data.tenantId);
@@ -140,6 +143,9 @@ export class UpsertJobUseCase {
         url: data.url, // Canonical URL
         description: data.description,
         location: data.location,
+        workplaceType: data.workplaceType,
+        contractType: data.contractType,
+        tags: data.tags,
         formSchema: data.formSchema,
         now,
       });
@@ -148,6 +154,9 @@ export class UpsertJobUseCase {
         title: data.title,
         description: data.description,
         location: data.location,
+        workplaceType: data.workplaceType,
+        contractType: data.contractType,
+        tags: data.tags,
         formSchema: data.formSchema,
         status: 'PUBLISHED',
         now,

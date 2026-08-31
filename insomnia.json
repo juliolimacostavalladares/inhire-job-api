@@ -351,8 +351,18 @@
       "modified": 1788180000000,
       "created": 1788180000000,
       "url": "{{ _.base_url }}/v1/jobs",
-      "name": "3. Listar Vagas Públicas",
+      "name": "3. Pesquisar e Listar Vagas Públicas (Filtros: search, title, workplaceType, contractType, tags)",
       "method": "GET",
+      "parameters": [
+        { "name": "search", "value": "", "disabled": true },
+        { "name": "title", "value": "Frontend", "disabled": true },
+        { "name": "tenantSlug", "value": "contabilizei", "disabled": true },
+        { "name": "workplaceType", "value": "Remote", "disabled": true },
+        { "name": "contractType", "value": "CLT", "disabled": true },
+        { "name": "tags", "value": "React,TypeScript", "disabled": true },
+        { "name": "page", "value": "1", "disabled": true },
+        { "name": "limit", "value": "50", "disabled": true }
+      ],
       "metaSortKey": 403,
       "_type": "request"
     },
@@ -375,6 +385,11 @@
       "url": "{{ _.base_url }}/v1/tenants",
       "name": "5. Listar Empresas/Tenants do Catálogo",
       "method": "GET",
+      "parameters": [
+        { "name": "search", "value": "", "disabled": true },
+        { "name": "page", "value": "1", "disabled": true },
+        { "name": "limit", "value": "50", "disabled": true }
+      ],
       "metaSortKey": 405,
       "_type": "request"
     },
@@ -395,8 +410,16 @@
       "modified": 1788180000000,
       "created": 1788180000000,
       "url": "{{ _.base_url }}/v1/tenants/{{ _.tenant_id }}/jobs",
-      "name": "7. Listar Vagas de uma Empresa/Tenant",
+      "name": "7. Listar Vagas de uma Empresa/Tenant (com Filtros)",
       "method": "GET",
+      "parameters": [
+        { "name": "search", "value": "", "disabled": true },
+        { "name": "title", "value": "Frontend", "disabled": true },
+        { "name": "workplaceType", "value": "Remote", "disabled": true },
+        { "name": "contractType", "value": "CLT", "disabled": true },
+        { "name": "page", "value": "1", "disabled": true },
+        { "name": "limit", "value": "50", "disabled": true }
+      ],
       "metaSortKey": 407,
       "_type": "request"
     },

@@ -13,6 +13,9 @@ export interface CatalogService {
     url: string;
     description: string;
     location?: string;
+    workplaceType?: string;
+    contractType?: string;
+    tags?: string[];
     formSchema?: FormFieldSchema[];
   }): Promise<Job>;
   closeMissingJobs(tenantId: string, observedExternalIds: string[]): Promise<number>;

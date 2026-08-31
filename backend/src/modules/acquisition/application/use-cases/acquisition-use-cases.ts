@@ -231,6 +231,9 @@ export class ProcessJobCollectionUseCase {
             url: jobData.url, // Canonical URL
             description: jobData.description,
             location: jobData.location,
+            workplaceType: jobData.workplaceType,
+            contractType: jobData.contractType,
+            tags: jobData.tags,
             formSchema: jobData.formSchema,
           });
         }

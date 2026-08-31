@@ -86,21 +86,24 @@ model Tenant {
 }
 
 model Job {
-  id          String   @id @default(uuid())
-  tenantId    String
-  tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  externalId  String
-  title       String
-  url         String
-  status      String   @default("PUBLISHED")
-  description String
-  location    String?
-  formSchema  Json     @default("[]")
-  version     Int      @default(1)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  applications JobApplication[]
-  resumes     TailoredResume[]
+  id            String   @id @default(uuid())
+  tenantId      String
+  tenant        Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  externalId    String
+  title         String
+  url           String
+  status        String   @default("PUBLISHED")
+  description   String
+  location      String?
+  workplaceType String?
+  contractType  String?
+  tags          String[] @default([])
+  formSchema    Json     @default("[]")
+  version       Int      @default(1)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  applications  JobApplication[]
+  resumes       TailoredResume[]
 
   @@unique([tenantId, externalId])
   @@map("jobs")

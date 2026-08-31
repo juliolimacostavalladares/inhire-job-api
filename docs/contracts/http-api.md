@@ -31,10 +31,20 @@ GET não agenda trabalho nem altera estado.
 | ------------------------------- | ------- | ------------------------------------------- | ---------------------------------------------------------------------- |
 | `GET /tenants`                  | público | `200 {items: Tenant[], total: number}`      | Lista todas as empresas ativas descobertas (`?page`, `?limit`, `?search`) |
 | `GET /tenants/:idOrSlug`        | público | `200 Tenant`                                | Consulta detalhes de uma empresa por ID ou slug                         |
-| `GET /tenants/:idOrSlug/jobs`   | público | `200 {items: Job[], total: number}`         | Lista todas as vagas publicadas de uma empresa específica              |
-| `GET /jobs`                     | público | `200 {items: Job[], total: number}`         | Lista vagas do catálogo (`?tenantId`, `?tenantSlug`, `?search`, `?page`, `?limit`) |
+| `GET /tenants/:idOrSlug/jobs`   | público | `200 {items: Job[], total: number}`         | Lista vagas de uma empresa (`?title`, `?workplaceType`, `?contractType`, `?location`, `?tags`, `?search`) |
+| `GET /jobs`                     | público | `200 {items: Job[], total: number}`         | Pesquisa vagas no catálogo com filtros avançados (`?search`, `?q`, `?title`, `?tenantId`, `?tenantSlug`, `?workplaceType`, `?contractType`, `?location`, `?tags`, `?page`, `?limit`) |
 | `GET /jobs/:id`                 | público | `200 Job`                                   | Consulta detalhes da vaga com snapshot e `url` canônica byte-a-byte    |
 | `GET /jobs/:id/application-form`| público | `200 FormFieldSchema[]`                     | Obtém o formulário oficial de candidatura da vaga                      |
+
+### Filtros de Busca Suportados em `/v1/jobs`:
+* `search` ou `q`: Termo de busca textual geral (busca em título, descrição, localidade, modalidade e tags).
+* `title`: Cargo / Título específico da vaga (ex.: `Frontend`, `Tech Lead`).
+* `tenantId` / `tenantSlug`: Identificador ou slug da empresa anunciante (ex.: `dock`, `contabilizei`).
+* `workplaceType`: Modalidade de trabalho (ex.: `Remote`, `Hybrid`, `Onsite`).
+* `contractType`: Tipo de contrato (ex.: `CLT`, `PJ`, `Internship`).
+* `location`: Localidade geográfica (ex.: `São Paulo`, `Curitiba`, `Remoto`).
+* `tags`: Lista de tags / tecnologias separadas por vírgula (ex.: `React,TypeScript,Next.js`).
+* `page` & `limit`: Paginação (`page=1&limit=50`).
 
 Escritas de Tenant exigem ADMIN. Job devolve `url` exatamente como persistida.
 

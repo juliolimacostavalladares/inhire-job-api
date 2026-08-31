@@ -6,6 +6,9 @@ export interface RawJobPayload {
   url: string;
   description: string;
   location?: string;
+  workplaceType?: string;
+  contractType?: string;
+  tags?: string[];
   formSchema: FormFieldSchema[];
 }
 

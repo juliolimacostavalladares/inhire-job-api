@@ -24,7 +24,7 @@ export class CatalogFacade implements CatalogService {
   }
 
   async getApplicationForm(id: string): Promise<FormFieldSchema[]> {
-    return this.getApplicationFormUseCase.execute(jobId(id));
+    return this.getApplicationFormUseCase.execute(id);
   }
 
   async upsertTenant(data: { slug: string; name: string; officialUrl: string }): Promise<Tenant> {
@@ -38,6 +38,9 @@ export class CatalogFacade implements CatalogService {
     url: string;
     description: string;
     location?: string;
+    workplaceType?: string;
+    contractType?: string;
+    tags?: string[];
     formSchema?: FormFieldSchema[];
   }): Promise<Job> {
     return this.upsertJobUseCase.execute(data);
@@ -46,8 +49,4 @@ export class CatalogFacade implements CatalogService {
   async closeMissingJobs(tenantId: string, observedExternalIds: string[]): Promise<number> {
     return this.closeMissingJobsUseCase.execute(tenantId, observedExternalIds);
   }
-}
-
-function jobId(id: string): string {
-  return id;
 }

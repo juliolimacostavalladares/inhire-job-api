@@ -20,6 +20,9 @@ export class PrismaJobsRepository implements JobsRepository {
       status: record.status as JobStatus,
       description: record.description,
       location: record.location,
+      workplaceType: record.workplaceType,
+      contractType: record.contractType,
+      tags: record.tags,
       formSchema: (record.formSchema as unknown as FormFieldSchema[]) || [],
       version: record.version,
       createdAt: record.createdAt,
@@ -46,6 +49,9 @@ export class PrismaJobsRepository implements JobsRepository {
       status: record.status as JobStatus,
       description: record.description,
       location: record.location,
+      workplaceType: record.workplaceType,
+      contractType: record.contractType,
+      tags: record.tags,
       formSchema: (record.formSchema as unknown as FormFieldSchema[]) || [],
       version: record.version,
       createdAt: record.createdAt,
@@ -61,10 +67,35 @@ export class PrismaJobsRepository implements JobsRepository {
     const where: Prisma.JobWhereInput = {};
     if (filter?.tenantId) where.tenantId = filter.tenantId;
     if (filter?.status) where.status = filter.status;
+
+    if (filter?.title) {
+      where.title = { contains: filter.title, mode: 'insensitive' };
+    }
+
+    if (filter?.workplaceType) {
+      where.workplaceType = { contains: filter.workplaceType, mode: 'insensitive' };
+    }
+
+    if (filter?.contractType) {
+      where.contractType = { contains: filter.contractType, mode: 'insensitive' };
+    }
+
+    if (filter?.location) {
+      where.location = { contains: filter.location, mode: 'insensitive' };
+    }
+
+    if (filter?.tags && filter.tags.length > 0) {
+      where.tags = { hasSome: filter.tags };
+    }
+
     if (filter?.search) {
       where.OR = [
         { title: { contains: filter.search, mode: 'insensitive' } },
         { description: { contains: filter.search, mode: 'insensitive' } },
+        { location: { contains: filter.search, mode: 'insensitive' } },
+        { workplaceType: { contains: filter.search, mode: 'insensitive' } },
+        { contractType: { contains: filter.search, mode: 'insensitive' } },
+        { tags: { has: filter.search } },
       ];
     }
 
@@ -85,6 +116,9 @@ export class PrismaJobsRepository implements JobsRepository {
             status: r.status as JobStatus,
             description: r.description,
             location: r.location,
+            workplaceType: r.workplaceType,
+            contractType: r.contractType,
+            tags: r.tags,
             formSchema: (r.formSchema as unknown as FormFieldSchema[]) || [],
             version: r.version,
             createdAt: r.createdAt,
@@ -108,6 +142,9 @@ export class PrismaJobsRepository implements JobsRepository {
           status: r.status as JobStatus,
           description: r.description,
           location: r.location,
+          workplaceType: r.workplaceType,
+          contractType: r.contractType,
+          tags: r.tags,
           formSchema: (r.formSchema as unknown as FormFieldSchema[]) || [],
           version: r.version,
           createdAt: r.createdAt,
@@ -128,6 +165,9 @@ export class PrismaJobsRepository implements JobsRepository {
         status: job.status,
         description: job.description,
         location: job.location,
+        workplaceType: job.workplaceType,
+        contractType: job.contractType,
+        tags: job.tags,
         formSchema: job.formSchema as unknown as Prisma.InputJsonValue,
         version: job.version,
         createdAt: job.createdAt,
@@ -139,6 +179,9 @@ export class PrismaJobsRepository implements JobsRepository {
         status: job.status,
         description: job.description,
         location: job.location,
+        workplaceType: job.workplaceType,
+        contractType: job.contractType,
+        tags: job.tags,
         formSchema: job.formSchema as unknown as Prisma.InputJsonValue,
         version: job.version,
         updatedAt: job.updatedAt,
@@ -154,6 +197,9 @@ export class PrismaJobsRepository implements JobsRepository {
       status: record.status as JobStatus,
       description: record.description,
       location: record.location,
+      workplaceType: record.workplaceType,
+      contractType: record.contractType,
+      tags: record.tags,
       formSchema: (record.formSchema as unknown as FormFieldSchema[]) || [],
       version: record.version,
       createdAt: record.createdAt,

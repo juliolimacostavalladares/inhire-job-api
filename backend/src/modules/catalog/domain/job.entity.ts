@@ -24,6 +24,9 @@ export interface JobProps {
   status: JobStatus;
   description: string;
   location?: string | null;
+  workplaceType?: string | null;
+  contractType?: string | null;
+  tags?: string[];
   formSchema: FormFieldSchema[];
   version: number;
   createdAt: Date;
@@ -38,6 +41,9 @@ export interface JobSnapshot {
   status: JobStatus;
   description: string;
   location?: string | null;
+  workplaceType?: string | null;
+  contractType?: string | null;
+  tags?: string[];
   formSchema: FormFieldSchema[];
   version: number;
 }
@@ -77,6 +83,18 @@ export class Job {
     return this.props.location;
   }
 
+  get workplaceType(): string | null | undefined {
+    return this.props.workplaceType;
+  }
+
+  get contractType(): string | null | undefined {
+    return this.props.contractType;
+  }
+
+  get tags(): string[] {
+    return this.props.tags || [];
+  }
+
   get formSchema(): FormFieldSchema[] {
     return this.props.formSchema;
   }
@@ -111,10 +129,23 @@ export class Job {
     }
   }
 
-  update(data: { title?: string; description?: string; location?: string; formSchema?: FormFieldSchema[]; status?: JobStatus; now?: Date }): void {
+  update(data: {
+    title?: string;
+    description?: string;
+    location?: string;
+    workplaceType?: string;
+    contractType?: string;
+    tags?: string[];
+    formSchema?: FormFieldSchema[];
+    status?: JobStatus;
+    now?: Date;
+  }): void {
     if (data.title !== undefined) this.props.title = data.title;
     if (data.description !== undefined) this.props.description = data.description;
     if (data.location !== undefined) this.props.location = data.location;
+    if (data.workplaceType !== undefined) this.props.workplaceType = data.workplaceType;
+    if (data.contractType !== undefined) this.props.contractType = data.contractType;
+    if (data.tags !== undefined) this.props.tags = data.tags;
     if (data.formSchema !== undefined) this.props.formSchema = data.formSchema;
     if (data.status !== undefined) this.props.status = data.status;
     this.props.version += 1;
@@ -136,6 +167,9 @@ export class Job {
       status: this.props.status,
       description: this.props.description,
       location: this.props.location,
+      workplaceType: this.props.workplaceType,
+      contractType: this.props.contractType,
+      tags: [...(this.props.tags || [])],
       formSchema: [...this.props.formSchema],
       version: this.props.version,
     };
@@ -149,6 +183,9 @@ export class Job {
     url: string;
     description: string;
     location?: string;
+    workplaceType?: string;
+    contractType?: string;
+    tags?: string[];
     formSchema?: FormFieldSchema[];
     status?: JobStatus;
     now?: Date;
@@ -164,6 +201,9 @@ export class Job {
       status: props.status ?? 'PUBLISHED',
       description: props.description,
       location: props.location || null,
+      workplaceType: props.workplaceType || null,
+      contractType: props.contractType || null,
+      tags: props.tags ?? [],
       formSchema: props.formSchema ?? [],
       version: 1,
       createdAt: now,

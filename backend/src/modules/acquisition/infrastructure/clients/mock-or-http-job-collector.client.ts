@@ -152,12 +152,23 @@ export class MockOrHttpJobCollectorClient implements JobCollectorClient {
               ? `${item.location} (${item.workplaceType || 'Remoto'})`
               : item.workplaceType || 'Remoto';
 
+            const workplaceType = item.workplaceType || null;
+            const contractType = (item as unknown as { contractType?: string }).contractType || null;
+            const tags = [
+              ...(workplaceType ? [workplaceType] : []),
+              ...(contractType ? [contractType] : []),
+              ...item.displayName.split(/[,/•\-–|]/).map((s) => s.trim()).filter((s) => s.length >= 3),
+            ];
+
             collectedJobs.push({
               externalId: item.jobId,
               title: item.displayName,
               url: canonicalUrl,
               description: `Vaga oficial publicada por ${data.tenantName || tenantSlug} no portal InHire. Modalidade: ${item.workplaceType || 'Não informada'}. Localidade: ${locationStr}.`,
               location: locationStr,
+              workplaceType: workplaceType || undefined,
+              contractType: contractType || undefined,
+              tags,
               formSchema: [
                 { key: 'fullName', label: 'Nome Completo', type: 'text', required: true },
                 { key: 'email', label: 'E-mail', type: 'email', required: true },

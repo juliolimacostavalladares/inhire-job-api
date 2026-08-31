@@ -4,6 +4,11 @@ export interface FindJobsFilter {
   tenantId?: string;
   status?: 'PUBLISHED' | 'CLOSED';
   search?: string;
+  title?: string;
+  workplaceType?: string;
+  contractType?: string;
+  location?: string;
+  tags?: string[];
   page?: number;
   limit?: number;
 }
