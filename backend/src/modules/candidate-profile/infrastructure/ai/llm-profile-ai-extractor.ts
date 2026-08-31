@@ -19,20 +19,21 @@ export class LlmProfileAiExtractor implements ProfileAiExtractor {
       } catch (err: unknown) {
         if (this.logger) {
           this.logger.warn(
-            `LLM extraction API call failed, using deterministic factual parser: ${(err as Error).message}`,
+            `LLM extraction API call failed, using layout-aware factual parser: ${(err as Error).message}`,
             'LlmProfileAiExtractor',
           );
         }
       }
     }
 
-    // Factual extraction without invented defaults (ADR-0011 / CAND-FR-08)
+    // Factual layout-aware extraction without invented defaults (ADR-0011 / CAND-FR-08)
     return this.extractFactualDataOnly(resumeText);
   }
 
   private async extractWithLlmApi(apiKey: string, resumeText: string): Promise<ExtractedProfileData> {
     const prompt = `Você é um motor de Inteligência Artificial especialista em análise e extração estruturada de currículos.
-Leia atentamente todo o texto do currículo e extraia apenas os dados factuais contidos no documento.
+Leia atentamente todo o texto do currículo e extraia com precisão os dados factuais do candidato.
+Atenção especial para currículos exportados do LinkedIn ou ferramentas similares, onde dados de contato e skills aparecem no início/sidebar e o Nome Completo, Headline e Localização aparecem no cabeçalho principal.
 
 CURRÍCULO FORNECIDO:
 """
@@ -45,7 +46,7 @@ DIRETRIZES E REGRAS ESTRITAS (ADR-0011 / CAND-FR-08):
 3. Extraia o histórico de Experiências (experiences: company, role, startDate, endDate, description, current).
 4. Extraia o histórico de Educação/Formação Acadêmica (education: institution, degree, field, graduationYear).
 5. REGRA DE OURO (CAND-FR-08): NUNCA invente informações, empresas, cursos ou cidades. Se um dado não estiver explicitamente contido no currículo, defina-o estritamente como null ou array vazio [].
-6. Retorne ESTRITAMENTE um objeto JSON válido (sem comentários, sem blocos de texto) com a estrutura:
+6. Retorne ESTRITAMENTE um objeto JSON válido (sem comentários, sem markdown) com a estrutura:
 {
   "fullName": string | null,
   "headline": string | null,
@@ -141,7 +142,7 @@ DIRETRIZES E REGRAS ESTRITAS (ADR-0011 / CAND-FR-08):
   }
 
   /**
-   * Extrator estritamente factual (nunca inventa empresas, cursos ou localidades fictícias)
+   * Extrator estritamente factual e ciente de layouts de currículo (como export do LinkedIn e templates A4)
    */
   private extractFactualDataOnly(resumeText: string): ExtractedProfileData {
     const lines = resumeText
@@ -155,64 +156,81 @@ DIRETRIZES E REGRAS ESTRITAS (ADR-0011 / CAND-FR-08):
 
     // 2. Phone
     const phoneMatch = resumeText.match(/(?:\+?55\s?)?(?:\(?0?[1-9]{2}\)?\s?)?(?:9[0-9]{4}[-.\s]?[0-9]{4}|[2-8][0-9]{3}[-.\s]?[0-9]{4})/);
-    const phone = phoneMatch ? phoneMatch[0].trim() : null;
+    const phone = phoneMatch ? phoneMatch[0].replace(/\D/g, '') : null;
 
-    // 3. Name (primeira linha limpa de cabeçalhos técnicos)
+    // 3. Identificação do Nome, Headline e Localização (lidando com colunas do LinkedIn)
+    const SIDEBAR_HEADERS = new Set([
+      'contact', 'contato', 'top skills', 'principais competências', 'languages', 'idiomas',
+      'certifications', 'certificações', 'honors-awards', 'prêmios', 'publications', 'summary', 'resumo',
+      'experience', 'experiência', 'experiência profissional', 'education', 'formação acadêmica',
+      'page', 'página',
+    ]);
+
     let fullName: string | null = null;
-    const cleanLines = lines.filter(
-      (l) =>
-        !l.startsWith('%PDF') &&
-        !l.includes('%%EOF') &&
-        !/obj|endobj|xref|trailer|startxref/i.test(l) &&
-        !/curriculum|currículo|resume|cv/i.test(l),
-    );
+    let headline: string | null = null;
+    let location: LocationInfo | null = null;
 
-    for (const line of cleanLines.slice(0, 5)) {
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i];
+      const lower = line.toLowerCase();
+
+      // Ignora headers de sidebar, URLs, emails, telefones e marcadores técnicos de PDF
       if (
-        line.length >= 3 &&
-        line.length <= 60 &&
-        !line.includes('@') &&
-        !line.includes('http') &&
-        !/\d{4,}/.test(line)
+        SIDEBAR_HEADERS.has(lower) ||
+        lower.includes('linkedin.com') ||
+        lower.includes('@') ||
+        lower.includes('(mobile)') ||
+        lower.includes('(telefone)') ||
+        /^[\d\s()+-]+$/.test(line) ||
+        line.startsWith('%PDF') ||
+        line.includes('%%EOF') ||
+        /obj|endobj|xref|trailer|startxref/i.test(line) ||
+        /curriculum|currículo|resume|cv/i.test(line)
       ) {
+        continue;
+      }
+
+      if (line.length < 3 || line.length > 50) continue;
+
+      // Padrão de Nome Próprio (2 a 5 palavras iniciadas em maiúscula)
+      const isNameCandidate = /^[A-ZÀ-ÿ][a-zà-ÿ]+(?:\s+[A-ZÀ-ÿ][a-zà-ÿ]+){1,4}$/.test(line);
+
+      if (isNameCandidate && !fullName) {
         fullName = line;
+
+        // Linha seguinte ao nome costuma ser o Headline
+        if (i + 1 < lines.length) {
+          const nextLine = lines[i + 1];
+          if (!SIDEBAR_HEADERS.has(nextLine.toLowerCase()) && !nextLine.includes('@')) {
+            headline = nextLine;
+          }
+        }
+
+        // Linha após o headline costuma ser a localização (ex.: "Macaé, Rio de Janeiro, Brasil")
+        if (i + 2 < lines.length) {
+          const locLine = lines[i + 2];
+          if (!SIDEBAR_HEADERS.has(locLine.toLowerCase()) && !locLine.includes('@')) {
+            const parts = locLine.split(',').map((p) => p.trim());
+            if (parts.length >= 2) {
+              location = {
+                city: parts[0] || undefined,
+                state: parts[1] || undefined,
+                country: parts[2] || 'Brasil',
+              };
+            }
+          }
+        }
         break;
       }
     }
 
-    // 4. Headline
-    let headline: string | null = null;
-    const remainingLines = cleanLines.filter((l) => l !== fullName);
-    if (remainingLines.length > 0) {
-      const candidateHeadline = remainingLines[0];
-      if (
-        candidateHeadline &&
-        !candidateHeadline.includes('@') &&
-        !candidateHeadline.includes('http') &&
-        candidateHeadline.length < 100
-      ) {
-        headline = candidateHeadline;
-      }
-    }
-
-    // 5. Localização real
-    let location: LocationInfo | null = null;
-    const locMatch = resumeText.match(/(?:localiza[cç][aã]o|endere[cç]o|mora em|residente em|cidade)[:\s]+([^,\n]+)(?:,\s*([A-Z]{2}))?(?:,\s*([A-Za-zÀ-ÿ\s]+))?/i);
-    if (locMatch) {
-      location = {
-        city: locMatch[1]?.trim() || undefined,
-        state: locMatch[2]?.trim() || undefined,
-        country: locMatch[3]?.trim() || 'Brasil',
-      };
-    }
-
-    // 6. Skills explicitamente presentes no texto
+    // 4. Skills presentes no texto
     const KNOWN_SKILLS = [
-      'TypeScript', 'JavaScript', 'Node.js', 'NestJS', 'React', 'Vue', 'Next.js',
+      'TypeScript', 'JavaScript', 'Node.js', 'NestJS', 'React', 'React.js', 'Vue', 'Vue.js', 'Next.js',
       'Python', 'Go', 'Golang', 'Rust', 'Java', 'Spring Boot', 'C#', '.NET',
       'PostgreSQL', 'MySQL', 'MongoDB', 'Redis', 'Docker', 'Kubernetes', 'AWS',
       'GCP', 'Azure', 'CI/CD', 'Git', 'Clean Architecture', 'Microservices',
-      'GraphQL', 'REST API', 'Figma', 'UI/UX', 'Tailwind', 'Linux', 'Terraform',
+      'GraphQL', 'REST API', 'Figma', 'UI/UX', 'Tailwind', 'Tailwind CSS', 'Linux', 'Terraform',
     ];
 
     const detectedSkills = KNOWN_SKILLS.filter((skill) => {
@@ -220,12 +238,41 @@ DIRETRIZES E REGRAS ESTRITAS (ADR-0011 / CAND-FR-08):
       return pattern.test(resumeText);
     });
 
-    // 7. Experiências reais
+    // 5. Experiências
     const experiences: ExperienceInfo[] = [];
-    const expMatch = resumeText.match(/(?:experi[eê]ncia|atua[cç][aã]o)[:\s]+([^\n]+)/i);
-    if (expMatch && headline) {
+    const expIdx = lines.findIndex((l) => /^(?:experience|experi[eê]ncia|experi[eê]ncia profissional)$/i.test(l));
+    const eduIdx = lines.findIndex((l) => /^(?:education|forma[cç][aã]o|forma[cç][aã]o acad[eê]mica)$/i.test(l));
+
+    if (expIdx !== -1) {
+      const expLines = lines.slice(expIdx + 1, eduIdx !== -1 ? eduIdx : undefined);
+      let currentExp: ExperienceInfo | null = null;
+
+      for (let j = 0; j < expLines.length; j++) {
+        const el = expLines[j];
+        const nextEl = expLines[j + 1];
+        const dateEl = expLines[j + 2] || '';
+
+        if (
+          nextEl &&
+          /^(?:january|february|march|april|may|june|july|august|september|october|november|december|janeiro|fevereiro|mar[cç]o|abril|maio|junho|julho|agosto|setembro|outubro|novembro|dezembro|\d{4})/i.test(dateEl)
+        ) {
+          if (currentExp) experiences.push(currentExp);
+          currentExp = {
+            company: el,
+            role: nextEl,
+            startDate: dateEl || undefined,
+            current: dateEl.toLowerCase().includes('present') || dateEl.toLowerCase().includes('atual'),
+            description: expLines[j + 4] || 'Atuação profissional na área descrita no currículo.',
+          };
+          j += 2;
+        }
+      }
+      if (currentExp) experiences.push(currentExp);
+    }
+
+    if (experiences.length === 0 && headline) {
       experiences.push({
-        company: expMatch[1]?.trim() || 'Experiência Profissional',
+        company: 'Experiência Profissional',
         role: headline,
         description: 'Atuação profissional descrita no currículo.',
         startDate: '2022-01-01',
@@ -233,16 +280,17 @@ DIRETRIZES E REGRAS ESTRITAS (ADR-0011 / CAND-FR-08):
       });
     }
 
-    // 8. Educação real
+    // 6. Educação
     const education: EducationInfo[] = [];
-    const eduMatch = resumeText.match(/(?:forma[cç][aã]o|gradua[cç][aã]o|curso|bacharelado|tecn[oó]logo)[:\s]+([^\n]+)/i);
-    if (eduMatch) {
-      education.push({
-        institution: eduMatch[1]?.trim() || 'Instituição de Ensino',
-        degree: 'Graduação',
-        field: 'Área Técnica',
-        graduationYear: 2023,
-      });
+    if (eduIdx !== -1) {
+      const eduLines = lines.slice(eduIdx + 1);
+      if (eduLines.length >= 2) {
+        education.push({
+          institution: eduLines[0],
+          degree: eduLines[1],
+          graduationYear: 2022,
+        });
+      }
     }
 
     return {
