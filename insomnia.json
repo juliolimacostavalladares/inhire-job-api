@@ -131,7 +131,7 @@
         "text": "{\n  \"email\": \"candidato.teste@inhire.internal\",\n  \"password\": \"SenhaForte123!\"\n}"
       },
       "headers": [{ "name": "Content-Type", "value": "application/json" }],
-      "afterResponseScript": "try {\n  const res = insomnia.response.json();\n  if (res.accessToken) {\n    insomnia.environment.set('candidate_token', res.accessToken);\n  }\n  if (res.refreshToken) {\n    insomnia.environment.set('candidate_refresh_token', res.refreshToken);\n  }\n  if (res.user && res.user.id) {\n    insomnia.environment.set('candidate_user_id', res.user.id);\n  }\n} catch (e) {\n  console.error('Error in after-response script', e);\n}",
+      "afterResponseScript": "try {\n  const res = insomnia.response.json();\n  if (res.accessToken) {\n    if (res.user && res.user.role === 'ADMIN') {\n      insomnia.environment.set('admin_token', res.accessToken);\n    } else {\n      insomnia.environment.set('candidate_token', res.accessToken);\n    }\n  }\n  if (res.refreshToken) {\n    if (res.user && res.user.role === 'ADMIN') {\n      insomnia.environment.set('admin_refresh_token', res.refreshToken);\n    } else {\n      insomnia.environment.set('candidate_refresh_token', res.refreshToken);\n    }\n  }\n  if (res.user && res.user.id) {\n    if (res.user.role === 'ADMIN') {\n      insomnia.environment.set('admin_user_id', res.user.id);\n    } else {\n      insomnia.environment.set('candidate_user_id', res.user.id);\n    }\n  }\n} catch (e) {\n  console.error('Error in after-response script', e);\n}",
       "metaSortKey": 202,
       "_type": "request"
     },
@@ -148,8 +148,25 @@
         "text": "{\n  \"email\": \"admin.teste@inhire.internal\",\n  \"password\": \"AdminSenha123!\",\n  \"role\": \"ADMIN\"\n}"
       },
       "headers": [{ "name": "Content-Type", "value": "application/json" }],
-      "afterResponseScript": "try {\n  const res = insomnia.response.json();\n  if (res.accessToken) {\n    insomnia.environment.set('admin_token', res.accessToken);\n  }\n} catch (e) {\n  console.error('Error in after-response script', e);\n}",
+      "afterResponseScript": "try {\n  const res = insomnia.response.json();\n  if (res.accessToken) {\n    insomnia.environment.set('admin_token', res.accessToken);\n  }\n  if (res.refreshToken) {\n    insomnia.environment.set('admin_refresh_token', res.refreshToken);\n  }\n  if (res.user && res.user.id) {\n    insomnia.environment.set('admin_user_id', res.user.id);\n  }\n} catch (e) {\n  console.error('Error in after-response script', e);\n}",
       "metaSortKey": 203,
+      "_type": "request"
+    },
+    {
+      "_id": "req_auth_login_admin",
+      "parentId": "fld_auth",
+      "modified": 1788180000000,
+      "created": 1788180000000,
+      "url": "{{ _.base_url }}/v1/auth/login",
+      "name": "4. Login Administrador (Auto-salva admin_token)",
+      "method": "POST",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"email\": \"admin.teste@inhire.internal\",\n  \"password\": \"AdminSenha123!\"\n}"
+      },
+      "headers": [{ "name": "Content-Type", "value": "application/json" }],
+      "afterResponseScript": "try {\n  const res = insomnia.response.json();\n  if (res.accessToken) {\n    insomnia.environment.set('admin_token', res.accessToken);\n  }\n  if (res.refreshToken) {\n    insomnia.environment.set('admin_refresh_token', res.refreshToken);\n  }\n  if (res.user && res.user.id) {\n    insomnia.environment.set('admin_user_id', res.user.id);\n  }\n} catch (e) {\n  console.error('Error in after-response script', e);\n}",
+      "metaSortKey": 204,
       "_type": "request"
     },
     {
@@ -158,7 +175,7 @@
       "modified": 1788180000000,
       "created": 1788180000000,
       "url": "{{ _.base_url }}/v1/auth/refresh",
-      "name": "4. Renovar Access Token",
+      "name": "5. Renovar Access Token",
       "method": "POST",
       "body": {
         "mimeType": "application/json",
@@ -166,7 +183,7 @@
       },
       "headers": [{ "name": "Content-Type", "value": "application/json" }],
       "afterResponseScript": "try {\n  const res = insomnia.response.json();\n  if (res.accessToken) {\n    insomnia.environment.set('candidate_token', res.accessToken);\n  }\n  if (res.refreshToken) {\n    insomnia.environment.set('candidate_refresh_token', res.refreshToken);\n  }\n} catch (e) {\n  console.error('Error in after-response script', e);\n}",
-      "metaSortKey": 204,
+      "metaSortKey": 205,
       "_type": "request"
     },
     {
@@ -175,10 +192,10 @@
       "modified": 1788180000000,
       "created": 1788180000000,
       "url": "{{ _.base_url }}/v1/auth/me",
-      "name": "5. Obter Identidade Atual",
+      "name": "6. Obter Identidade Atual",
       "method": "GET",
       "headers": [{ "name": "Authorization", "value": "Bearer {{ _.candidate_token }}" }],
-      "metaSortKey": 205,
+      "metaSortKey": 206,
       "_type": "request"
     },
     {
@@ -187,7 +204,7 @@
       "modified": 1788180000000,
       "created": 1788180000000,
       "url": "{{ _.base_url }}/v1/auth/logout",
-      "name": "6. Logout / Revogar Sessão",
+      "name": "7. Logout / Revogar Sessão",
       "method": "POST",
       "body": {
         "mimeType": "application/json",
@@ -197,7 +214,7 @@
         { "name": "Content-Type", "value": "application/json" },
         { "name": "Authorization", "value": "Bearer {{ _.candidate_token }}" }
       ],
-      "metaSortKey": 206,
+      "metaSortKey": 207,
       "_type": "request"
     },
     {
