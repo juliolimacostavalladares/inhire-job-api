@@ -1,7 +1,7 @@
 {
   "_type": "export",
   "__export_format": 4,
-  "__export_date": "2026-08-31T13:45:00.000Z",
+  "__export_date": "2026-08-31T13:50:00.000Z",
   "__export_source": "insomnia.desktop.app:v2023.5.8",
   "resources": [
     {
@@ -10,7 +10,7 @@
       "modified": 1788180000000,
       "created": 1788180000000,
       "name": "InHire Backend API",
-      "description": "Coleção com After-Response Scripts para auto-preenchimento das variáveis de ambiente em tempo real",
+      "description": "Coleção com rotas oficiais, After-Response Scripts para auto-preenchimento e encadeamento inteligente de dados",
       "scope": "collection",
       "_type": "workspace"
     },
@@ -114,7 +114,7 @@
         "text": "{\n  \"email\": \"candidato.teste@inhire.internal\",\n  \"password\": \"SenhaForte123!\",\n  \"role\": \"CANDIDATE\"\n}"
       },
       "headers": [{ "name": "Content-Type", "value": "application/json" }],
-      "afterResponseScript": "try {\n  const res = insomnia.response.json();\n  if (res.accessToken) {\n    insomnia.environment.set('candidate_token', res.accessToken);\n  }\n  if (res.refreshToken) {\n    insomnia.environment.set('candidate_refresh_token', res.refreshToken);\n  }\n  if (res.user && res.user.id) {\n    insomnia.environment.set('candidate_user_id', res.user.id);\n  }\n} catch (e) {\n  console.error('Error parsing response in after-response script', e);\n}",
+      "afterResponseScript": "try {\n  const res = insomnia.response.json();\n  if (res.accessToken) {\n    insomnia.environment.set('candidate_token', res.accessToken);\n  }\n  if (res.refreshToken) {\n    insomnia.environment.set('candidate_refresh_token', res.refreshToken);\n  }\n  if (res.user && res.user.id) {\n    insomnia.environment.set('candidate_user_id', res.user.id);\n  }\n} catch (e) {\n  console.error('Error in after-response script', e);\n}",
       "metaSortKey": 201,
       "_type": "request"
     },
@@ -131,7 +131,7 @@
         "text": "{\n  \"email\": \"candidato.teste@inhire.internal\",\n  \"password\": \"SenhaForte123!\"\n}"
       },
       "headers": [{ "name": "Content-Type", "value": "application/json" }],
-      "afterResponseScript": "try {\n  const res = insomnia.response.json();\n  if (res.accessToken) {\n    insomnia.environment.set('candidate_token', res.accessToken);\n  }\n  if (res.refreshToken) {\n    insomnia.environment.set('candidate_refresh_token', res.refreshToken);\n  }\n  if (res.user && res.user.id) {\n    insomnia.environment.set('candidate_user_id', res.user.id);\n  }\n} catch (e) {\n  console.error('Error parsing response in after-response script', e);\n}",
+      "afterResponseScript": "try {\n  const res = insomnia.response.json();\n  if (res.accessToken) {\n    insomnia.environment.set('candidate_token', res.accessToken);\n  }\n  if (res.refreshToken) {\n    insomnia.environment.set('candidate_refresh_token', res.refreshToken);\n  }\n  if (res.user && res.user.id) {\n    insomnia.environment.set('candidate_user_id', res.user.id);\n  }\n} catch (e) {\n  console.error('Error in after-response script', e);\n}",
       "metaSortKey": 202,
       "_type": "request"
     },
@@ -148,7 +148,7 @@
         "text": "{\n  \"email\": \"admin.teste@inhire.internal\",\n  \"password\": \"AdminSenha123!\",\n  \"role\": \"ADMIN\"\n}"
       },
       "headers": [{ "name": "Content-Type", "value": "application/json" }],
-      "afterResponseScript": "try {\n  const res = insomnia.response.json();\n  if (res.accessToken) {\n    insomnia.environment.set('admin_token', res.accessToken);\n  }\n} catch (e) {\n  console.error('Error parsing response in after-response script', e);\n}",
+      "afterResponseScript": "try {\n  const res = insomnia.response.json();\n  if (res.accessToken) {\n    insomnia.environment.set('admin_token', res.accessToken);\n  }\n} catch (e) {\n  console.error('Error in after-response script', e);\n}",
       "metaSortKey": 203,
       "_type": "request"
     },
@@ -158,14 +158,14 @@
       "modified": 1788180000000,
       "created": 1788180000000,
       "url": "{{ _.base_url }}/v1/auth/refresh",
-      "name": "4. Renovar Access Token (Auto-atualiza candidate_token & refresh_token)",
+      "name": "4. Renovar Access Token",
       "method": "POST",
       "body": {
         "mimeType": "application/json",
         "text": "{\n  \"refreshToken\": \"{{ _.candidate_refresh_token }}\"\n}"
       },
       "headers": [{ "name": "Content-Type", "value": "application/json" }],
-      "afterResponseScript": "try {\n  const res = insomnia.response.json();\n  if (res.accessToken) {\n    insomnia.environment.set('candidate_token', res.accessToken);\n  }\n  if (res.refreshToken) {\n    insomnia.environment.set('candidate_refresh_token', res.refreshToken);\n  }\n} catch (e) {\n  console.error('Error parsing response in after-response script', e);\n}",
+      "afterResponseScript": "try {\n  const res = insomnia.response.json();\n  if (res.accessToken) {\n    insomnia.environment.set('candidate_token', res.accessToken);\n  }\n  if (res.refreshToken) {\n    insomnia.environment.set('candidate_refresh_token', res.refreshToken);\n  }\n} catch (e) {\n  console.error('Error in after-response script', e);\n}",
       "metaSortKey": 204,
       "_type": "request"
     },
@@ -366,41 +366,59 @@
       "parentId": "wrk_inhire_api",
       "modified": 1788180000000,
       "created": 1788180000000,
-      "name": "05 - Aquisição & Coleta",
-      "description": "Descoberta e coleta de vagas de ATS",
+      "name": "05 - Aquisição & Coleta (Runs)",
+      "description": "Execuções de descoberta e coleta de vagas em ATS",
       "environment": {},
       "metaSortKey": 500,
       "_type": "request_group"
     },
     {
-      "_id": "req_acq_discover",
+      "_id": "req_acq_discovery",
       "parentId": "fld_acquisition",
       "modified": 1788180000000,
       "created": 1788180000000,
-      "url": "{{ _.base_url }}/v1/acquisition/tenants/{{ _.tenant_id }}/discover",
-      "name": "1. [Admin] Disparar Descoberta de Vagas (Auto-salva crawl_run_id)",
+      "url": "{{ _.base_url }}/v1/runs/discovery",
+      "name": "1. [Admin] Disparar Descoberta Global (Auto-salva crawl_run_id)",
       "method": "POST",
       "headers": [
         { "name": "Authorization", "value": "Bearer {{ _.admin_token }}" },
-        { "name": "Idempotency-Key", "value": "acq-discover-001" }
+        { "name": "Idempotency-Key", "value": "acq-discover-run-001" }
       ],
       "afterResponseScript": "try {\n  const res = insomnia.response.json();\n  if (res.runId) {\n    insomnia.environment.set('crawl_run_id', res.runId);\n  }\n} catch (e) {\n  console.error('Error in after-response script', e);\n}",
       "metaSortKey": 501,
       "_type": "request"
     },
     {
-      "_id": "req_acq_collect",
+      "_id": "req_acq_collection",
       "parentId": "fld_acquisition",
       "modified": 1788180000000,
       "created": 1788180000000,
-      "url": "{{ _.base_url }}/v1/acquisition/tenants/{{ _.tenant_id }}/collect",
-      "name": "2. [Admin] Disparar Coleta Conclusiva",
+      "url": "{{ _.base_url }}/v1/runs/collection",
+      "name": "2. [Admin] Disparar Coleta de Vagas (Auto-salva crawl_run_id)",
       "method": "POST",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"tenantId\": \"{{ _.tenant_id }}\"\n}"
+      },
       "headers": [
+        { "name": "Content-Type", "value": "application/json" },
         { "name": "Authorization", "value": "Bearer {{ _.admin_token }}" },
-        { "name": "Idempotency-Key", "value": "acq-collect-001" }
+        { "name": "Idempotency-Key", "value": "acq-collect-run-001" }
       ],
+      "afterResponseScript": "try {\n  const res = insomnia.response.json();\n  if (res.runId) {\n    insomnia.environment.set('crawl_run_id', res.runId);\n  }\n} catch (e) {\n  console.error('Error in after-response script', e);\n}",
       "metaSortKey": 502,
+      "_type": "request"
+    },
+    {
+      "_id": "req_acq_list_runs",
+      "parentId": "fld_acquisition",
+      "modified": 1788180000000,
+      "created": 1788180000000,
+      "url": "{{ _.base_url }}/v1/runs",
+      "name": "3. [Admin] Listar Execuções de Coleta/Descoberta",
+      "method": "GET",
+      "headers": [{ "name": "Authorization", "value": "Bearer {{ _.admin_token }}" }],
+      "metaSortKey": 503,
       "_type": "request"
     },
     {
@@ -408,11 +426,11 @@
       "parentId": "fld_acquisition",
       "modified": 1788180000000,
       "created": 1788180000000,
-      "url": "{{ _.base_url }}/v1/acquisition/crawl-runs/{{ _.crawl_run_id }}",
-      "name": "3. [Admin] Consultar Status da Execução de Coleta",
+      "url": "{{ _.base_url }}/v1/runs/{{ _.crawl_run_id }}",
+      "name": "4. [Admin] Consultar Status da Execução",
       "method": "GET",
       "headers": [{ "name": "Authorization", "value": "Bearer {{ _.admin_token }}" }],
-      "metaSortKey": 503,
+      "metaSortKey": 504,
       "_type": "request"
     },
     {
@@ -427,36 +445,31 @@
       "_type": "request_group"
     },
     {
-      "_id": "req_resume_get_job",
-      "parentId": "fld_resume",
-      "modified": 1788180000000,
-      "created": 1788180000000,
-      "url": "{{ _.base_url }}/v1/resumes/by-job/{{ _.job_id }}",
-      "name": "1. Consultar Currículo por Vaga (Auto-salva resume_artifact_id)",
-      "method": "GET",
-      "headers": [{ "name": "Authorization", "value": "Bearer {{ _.candidate_token }}" }],
-      "afterResponseScript": "try {\n  const res = insomnia.response.json();\n  if (res.artifactId) {\n    insomnia.environment.set('resume_artifact_id', res.artifactId);\n  }\n} catch (e) {\n  console.error('Error in after-response script', e);\n}",
-      "metaSortKey": 601,
-      "_type": "request"
-    },
-    {
       "_id": "req_resume_generate",
       "parentId": "fld_resume",
       "modified": 1788180000000,
       "created": 1788180000000,
-      "url": "{{ _.base_url }}/v1/resumes/generations",
-      "name": "2. Disparar Geração Sob Medida (Auto-salva resume_generation_id)",
+      "url": "{{ _.base_url }}/v1/jobs/{{ _.job_id }}/resumes",
+      "name": "1. Disparar Geração Sob Medida (Auto-salva resume_generation_id)",
       "method": "POST",
-      "body": {
-        "mimeType": "application/json",
-        "text": "{\n  \"jobId\": \"{{ _.job_id }}\"\n}"
-      },
       "headers": [
-        { "name": "Content-Type", "value": "application/json" },
         { "name": "Authorization", "value": "Bearer {{ _.candidate_token }}" },
-        { "name": "Idempotency-Key", "value": "resume-gen-001" }
+        { "name": "Idempotency-Key", "value": "resume-gen-live-001" }
       ],
       "afterResponseScript": "try {\n  const res = insomnia.response.json();\n  if (res.generationId) {\n    insomnia.environment.set('resume_generation_id', res.generationId);\n  }\n} catch (e) {\n  console.error('Error in after-response script', e);\n}",
+      "metaSortKey": 601,
+      "_type": "request"
+    },
+    {
+      "_id": "req_resume_get_job",
+      "parentId": "fld_resume",
+      "modified": 1788180000000,
+      "created": 1788180000000,
+      "url": "{{ _.base_url }}/v1/jobs/{{ _.job_id }}/resume",
+      "name": "2. Consultar Currículo por Vaga (Auto-salva resume_artifact_id)",
+      "method": "GET",
+      "headers": [{ "name": "Authorization", "value": "Bearer {{ _.candidate_token }}" }],
+      "afterResponseScript": "try {\n  const res = insomnia.response.json();\n  if (res.resumeArtifactId) {\n    insomnia.environment.set('resume_artifact_id', res.resumeArtifactId);\n  }\n} catch (e) {\n  console.error('Error in after-response script', e);\n}",
       "metaSortKey": 602,
       "_type": "request"
     },
@@ -465,7 +478,7 @@
       "parentId": "fld_resume",
       "modified": 1788180000000,
       "created": 1788180000000,
-      "url": "{{ _.base_url }}/v1/resumes/generations/{{ _.resume_generation_id }}",
+      "url": "{{ _.base_url }}/v1/resume-generations/{{ _.resume_generation_id }}",
       "name": "3. Consultar Status da Geração de Currículo",
       "method": "GET",
       "headers": [{ "name": "Authorization", "value": "Bearer {{ _.candidate_token }}" }],
@@ -477,7 +490,7 @@
       "parentId": "fld_resume",
       "modified": 1788180000000,
       "created": 1788180000000,
-      "url": "{{ _.base_url }}/v1/resumes/artifacts/{{ _.resume_artifact_id }}/download",
+      "url": "{{ _.base_url }}/v1/resume-artifacts/{{ _.resume_artifact_id }}/download",
       "name": "4. Download do PDF do Currículo",
       "method": "GET",
       "headers": [{ "name": "Authorization", "value": "Bearer {{ _.candidate_token }}" }],
