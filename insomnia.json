@@ -238,7 +238,7 @@
       "headers": [
         { "name": "Content-Type", "value": "application/json" },
         { "name": "Authorization", "value": "Bearer {{ _.candidate_token }}" },
-        { "name": "Idempotency-Key", "value": "prof-update-001" }
+        { "name": "Idempotency-Key", "value": "{% uuid 'v4' %}" }
       ],
       "metaSortKey": 302,
       "_type": "request"
@@ -276,7 +276,7 @@
       },
       "headers": [
         { "name": "Authorization", "value": "Bearer {{ _.candidate_token }}" },
-        { "name": "Idempotency-Key", "value": "import-pdf-001" }
+        { "name": "Idempotency-Key", "value": "{% uuid 'v4' %}" }
       ],
       "afterResponseScript": "try {\n  const res = insomnia.response.json();\n  const id = res.attemptId || res.importId;\n  if (id) {\n    insomnia.environment.set('import_attempt_id', id);\n  }\n} catch (e) {\n  console.error('Error in after-response script', e);\n}",
       "metaSortKey": 304,
@@ -388,7 +388,7 @@
       "method": "POST",
       "headers": [
         { "name": "Authorization", "value": "Bearer {{ _.admin_token }}" },
-        { "name": "Idempotency-Key", "value": "acq-discover-run-001" }
+        { "name": "Idempotency-Key", "value": "{% uuid 'v4' %}" }
       ],
       "afterResponseScript": "try {\n  const res = insomnia.response.json();\n  if (res.runId) {\n    insomnia.environment.set('crawl_run_id', res.runId);\n  }\n} catch (e) {\n  console.error('Error in after-response script', e);\n}",
       "metaSortKey": 501,
@@ -409,7 +409,7 @@
       "headers": [
         { "name": "Content-Type", "value": "application/json" },
         { "name": "Authorization", "value": "Bearer {{ _.admin_token }}" },
-        { "name": "Idempotency-Key", "value": "acq-collect-run-001" }
+        { "name": "Idempotency-Key", "value": "{% uuid 'v4' %}" }
       ],
       "afterResponseScript": "try {\n  const res = insomnia.response.json();\n  if (res.runId) {\n    insomnia.environment.set('crawl_run_id', res.runId);\n  }\n} catch (e) {\n  console.error('Error in after-response script', e);\n}",
       "metaSortKey": 502,
@@ -460,7 +460,7 @@
       "method": "POST",
       "headers": [
         { "name": "Authorization", "value": "Bearer {{ _.candidate_token }}" },
-        { "name": "Idempotency-Key", "value": "resume-gen-live-001" }
+        { "name": "Idempotency-Key", "value": "{% uuid 'v4' %}" }
       ],
       "afterResponseScript": "try {\n  const res = insomnia.response.json();\n  if (res.generationId) {\n    insomnia.environment.set('resume_generation_id', res.generationId);\n  }\n} catch (e) {\n  console.error('Error in after-response script', e);\n}",
       "metaSortKey": 601,
@@ -529,7 +529,7 @@
       "headers": [
         { "name": "Content-Type", "value": "application/json" },
         { "name": "Authorization", "value": "Bearer {{ _.candidate_token }}" },
-        { "name": "Idempotency-Key", "value": "apply-job-live-001" }
+        { "name": "Idempotency-Key", "value": "{% uuid 'v4' %}" }
       ],
       "afterResponseScript": "try {\n  const res = insomnia.response.json();\n  if (res.applicationId) {\n    insomnia.environment.set('application_id', res.applicationId);\n  }\n} catch (e) {\n  console.error('Error in after-response script', e);\n}",
       "metaSortKey": 701,
@@ -597,7 +597,7 @@
       "headers": [
         { "name": "Content-Type", "value": "application/json" },
         { "name": "Authorization", "value": "Bearer {{ _.candidate_token }}" },
-        { "name": "Idempotency-Key", "value": "policy-save-001" }
+        { "name": "Idempotency-Key", "value": "{% uuid 'v4' %}" }
       ],
       "metaSortKey": 801,
       "_type": "request"
