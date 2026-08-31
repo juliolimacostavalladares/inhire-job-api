@@ -16,6 +16,7 @@ O serviço descobre tenants, coleta vagas e mantém um catálogo confiável. `Jo
 - `CAT-FR-06`: somente coleta conclusiva fecha vagas não observadas.
 - `CAT-FR-07`: application form mantém chave, label, tipo, opções e obrigatoriedade.
 - `CAT-FR-08`: runs guardam trigger, status, contadores, itens e erro sanitizado.
+- `CAT-FR-09`: o pipeline de coleta filtra e seleciona apenas vagas com alta aderência ao nicho profissional de Engenharia de Software, Backend, Arquitetura, Cloud e Tecnologias de Desenvolvimento (TypeScript, Node.js, NestJS, Go, Python, Distributed Systems, Microsserviços), descartando cargos operacionais não correlatos.
 - `CAT-NFR-01`: repetir coleta/upsert não duplica Tenant ou Job.
 - `CAT-NFR-02`: consultas paginadas têm p95 abaixo de 250 ms para 100 itens.
 
@@ -26,3 +27,4 @@ O serviço descobre tenants, coleta vagas e mantém um catálogo confiável. `Jo
 - `CAT-AC-03`: coleta parcial não fecha vagas sem evidência.
 - `CAT-AC-04`: execução repetida mantém os mesmos registros e contadores corretos.
 - `CAT-AC-05`: Tenant inativo não recebe coleta agendada e mantém histórico.
+- `CAT-AC-06`: ao coletar vagas de um Tenant, apenas vagas alinhadas com o nicho de tecnologia/desenvolvimento de software/backend são persistidas e publicadas no Catálogo.
