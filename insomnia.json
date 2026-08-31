@@ -113,8 +113,13 @@
         "mimeType": "application/json",
         "text": "{\n  \"email\": \"candidato.teste@inhire.internal\",\n  \"password\": \"SenhaForte123!\",\n  \"role\": \"CANDIDATE\"\n}"
       },
-      "headers": [{ "name": "Content-Type", "value": "application/json" }],
-      "afterResponseScript": "try {\n  const res = insomnia.response.json();\n  if (res.accessToken) {\n    insomnia.environment.set('candidate_token', res.accessToken);\n  }\n  if (res.refreshToken) {\n    insomnia.environment.set('candidate_refresh_token', res.refreshToken);\n  }\n  if (res.user && res.user.id) {\n    insomnia.environment.set('candidate_user_id', res.user.id);\n  }\n} catch (e) {\n  console.error('Error in after-response script', e);\n}",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "afterResponseScript": "try {\n  const res = insomnia.response.json();\n  if (res.accessToken) {\n    insomnia.environment.set('candidate_token', res.accessToken);\n    if (res.user && res.user.role === 'ADMIN') {\n      insomnia.environment.set('admin_token', res.accessToken);\n    }\n  }\n  if (res.refreshToken) {\n    insomnia.environment.set('candidate_refresh_token', res.refreshToken);\n    if (res.user && res.user.role === 'ADMIN') {\n      insomnia.environment.set('admin_refresh_token', res.refreshToken);\n    }\n  }\n  if (res.user && res.user.id) {\n    insomnia.environment.set('candidate_user_id', res.user.id);\n    if (res.user.role === 'ADMIN') {\n      insomnia.environment.set('admin_user_id', res.user.id);\n    }\n  }\n} catch (e) {\n  console.error('Error in after-response script', e);\n}",
       "metaSortKey": 201,
       "_type": "request"
     },
@@ -130,8 +135,13 @@
         "mimeType": "application/json",
         "text": "{\n  \"email\": \"candidato.teste@inhire.internal\",\n  \"password\": \"SenhaForte123!\"\n}"
       },
-      "headers": [{ "name": "Content-Type", "value": "application/json" }],
-      "afterResponseScript": "try {\n  const res = insomnia.response.json();\n  if (res.accessToken) {\n    if (res.user && res.user.role === 'ADMIN') {\n      insomnia.environment.set('admin_token', res.accessToken);\n    } else {\n      insomnia.environment.set('candidate_token', res.accessToken);\n    }\n  }\n  if (res.refreshToken) {\n    if (res.user && res.user.role === 'ADMIN') {\n      insomnia.environment.set('admin_refresh_token', res.refreshToken);\n    } else {\n      insomnia.environment.set('candidate_refresh_token', res.refreshToken);\n    }\n  }\n  if (res.user && res.user.id) {\n    if (res.user.role === 'ADMIN') {\n      insomnia.environment.set('admin_user_id', res.user.id);\n    } else {\n      insomnia.environment.set('candidate_user_id', res.user.id);\n    }\n  }\n} catch (e) {\n  console.error('Error in after-response script', e);\n}",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "afterResponseScript": "try {\n  const res = insomnia.response.json();\n  if (res.accessToken) {\n    insomnia.environment.set('candidate_token', res.accessToken);\n    if (res.user && res.user.role === 'ADMIN') {\n      insomnia.environment.set('admin_token', res.accessToken);\n    }\n  }\n  if (res.refreshToken) {\n    insomnia.environment.set('candidate_refresh_token', res.refreshToken);\n    if (res.user && res.user.role === 'ADMIN') {\n      insomnia.environment.set('admin_refresh_token', res.refreshToken);\n    }\n  }\n  if (res.user && res.user.id) {\n    insomnia.environment.set('candidate_user_id', res.user.id);\n    if (res.user.role === 'ADMIN') {\n      insomnia.environment.set('admin_user_id', res.user.id);\n    }\n  }\n} catch (e) {\n  console.error('Error in after-response script', e);\n}",
       "metaSortKey": 202,
       "_type": "request"
     },
@@ -147,8 +157,13 @@
         "mimeType": "application/json",
         "text": "{\n  \"email\": \"admin.teste@inhire.internal\",\n  \"password\": \"AdminSenha123!\",\n  \"role\": \"ADMIN\"\n}"
       },
-      "headers": [{ "name": "Content-Type", "value": "application/json" }],
-      "afterResponseScript": "try {\n  const res = insomnia.response.json();\n  if (res.accessToken) {\n    insomnia.environment.set('admin_token', res.accessToken);\n  }\n  if (res.refreshToken) {\n    insomnia.environment.set('admin_refresh_token', res.refreshToken);\n  }\n  if (res.user && res.user.id) {\n    insomnia.environment.set('admin_user_id', res.user.id);\n  }\n} catch (e) {\n  console.error('Error in after-response script', e);\n}",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "afterResponseScript": "try {\n  const res = insomnia.response.json();\n  if (res.accessToken) {\n    insomnia.environment.set('admin_token', res.accessToken);\n    insomnia.environment.set('candidate_token', res.accessToken);\n  }\n  if (res.refreshToken) {\n    insomnia.environment.set('admin_refresh_token', res.refreshToken);\n    insomnia.environment.set('candidate_refresh_token', res.refreshToken);\n  }\n  if (res.user && res.user.id) {\n    insomnia.environment.set('admin_user_id', res.user.id);\n    insomnia.environment.set('candidate_user_id', res.user.id);\n  }\n} catch (e) {\n  console.error('Error in after-response script', e);\n}",
       "metaSortKey": 203,
       "_type": "request"
     },
@@ -164,8 +179,13 @@
         "mimeType": "application/json",
         "text": "{\n  \"email\": \"admin.teste@inhire.internal\",\n  \"password\": \"AdminSenha123!\"\n}"
       },
-      "headers": [{ "name": "Content-Type", "value": "application/json" }],
-      "afterResponseScript": "try {\n  const res = insomnia.response.json();\n  if (res.accessToken) {\n    insomnia.environment.set('admin_token', res.accessToken);\n  }\n  if (res.refreshToken) {\n    insomnia.environment.set('admin_refresh_token', res.refreshToken);\n  }\n  if (res.user && res.user.id) {\n    insomnia.environment.set('admin_user_id', res.user.id);\n  }\n} catch (e) {\n  console.error('Error in after-response script', e);\n}",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "afterResponseScript": "try {\n  const res = insomnia.response.json();\n  if (res.accessToken) {\n    insomnia.environment.set('admin_token', res.accessToken);\n    insomnia.environment.set('candidate_token', res.accessToken);\n  }\n  if (res.refreshToken) {\n    insomnia.environment.set('admin_refresh_token', res.refreshToken);\n    insomnia.environment.set('candidate_refresh_token', res.refreshToken);\n  }\n  if (res.user && res.user.id) {\n    insomnia.environment.set('admin_user_id', res.user.id);\n    insomnia.environment.set('candidate_user_id', res.user.id);\n  }\n} catch (e) {\n  console.error('Error in after-response script', e);\n}",
       "metaSortKey": 204,
       "_type": "request"
     },
@@ -181,8 +201,13 @@
         "mimeType": "application/json",
         "text": "{\n  \"refreshToken\": \"{{ _.candidate_refresh_token }}\"\n}"
       },
-      "headers": [{ "name": "Content-Type", "value": "application/json" }],
-      "afterResponseScript": "try {\n  const res = insomnia.response.json();\n  if (res.accessToken) {\n    insomnia.environment.set('candidate_token', res.accessToken);\n  }\n  if (res.refreshToken) {\n    insomnia.environment.set('candidate_refresh_token', res.refreshToken);\n  }\n} catch (e) {\n  console.error('Error in after-response script', e);\n}",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "afterResponseScript": "try {\n  const res = insomnia.response.json();\n  if (res.accessToken) {\n    insomnia.environment.set('candidate_token', res.accessToken);\n    if (res.user && res.user.role === 'ADMIN') {\n      insomnia.environment.set('admin_token', res.accessToken);\n    }\n  }\n  if (res.refreshToken) {\n    insomnia.environment.set('candidate_refresh_token', res.refreshToken);\n    if (res.user && res.user.role === 'ADMIN') {\n      insomnia.environment.set('admin_refresh_token', res.refreshToken);\n    }\n  }\n  if (res.user && res.user.id) {\n    insomnia.environment.set('candidate_user_id', res.user.id);\n    if (res.user.role === 'ADMIN') {\n      insomnia.environment.set('admin_user_id', res.user.id);\n    }\n  }\n} catch (e) {\n  console.error('Error in after-response script', e);\n}",
       "metaSortKey": 205,
       "_type": "request"
     },
@@ -194,7 +219,12 @@
       "url": "{{ _.base_url }}/v1/auth/me",
       "name": "6. Obter Identidade Atual",
       "method": "GET",
-      "headers": [{ "name": "Authorization", "value": "Bearer {{ _.candidate_token }}" }],
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.candidate_token || _.admin_token }}"
+        }
+      ],
       "metaSortKey": 206,
       "_type": "request"
     },
@@ -211,8 +241,14 @@
         "text": "{\n  \"refreshToken\": \"{{ _.candidate_refresh_token }}\"\n}"
       },
       "headers": [
-        { "name": "Content-Type", "value": "application/json" },
-        { "name": "Authorization", "value": "Bearer {{ _.candidate_token }}" }
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        },
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.candidate_token || _.admin_token }}"
+        }
       ],
       "metaSortKey": 207,
       "_type": "request"
@@ -236,7 +272,12 @@
       "url": "{{ _.base_url }}/v1/me/profile",
       "name": "1. Consultar Meu Perfil",
       "method": "GET",
-      "headers": [{ "name": "Authorization", "value": "Bearer {{ _.candidate_token }}" }],
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.candidate_token || _.admin_token }}"
+        }
+      ],
       "metaSortKey": 301,
       "_type": "request"
     },
@@ -253,9 +294,18 @@
         "text": "{\n  \"fullName\": \"Carlos Eduardo Silva\",\n  \"email\": \"candidato.teste@inhire.internal\",\n  \"phone\": \"+55 11 98765-4321\",\n  \"headline\": \"Senior Software Engineer\",\n  \"location\": {\n    \"country\": \"Brazil\",\n    \"city\": \"São Paulo\"\n  },\n  \"skills\": [\n    \"TypeScript\",\n    \"NestJS\",\n    \"PostgreSQL\",\n    \"Docker\",\n    \"BullMQ\"\n  ],\n  \"experiences\": [\n    {\n      \"company\": \"Tech Solutions\",\n      \"role\": \"Senior Backend Developer\",\n      \"startDate\": \"2022-01-01\",\n      \"description\": \"Desenvolvimento de microsserviços resilientes em Node.js e Clean Architecture\"\n    }\n  ],\n  \"education\": [\n    {\n      \"institution\": \"Universidade de São Paulo\",\n      \"degree\": \"Ciência da Computação\",\n      \"startDate\": \"2016-01-01\",\n      \"endDate\": \"2020-12-31\"\n    }\n  ]\n}"
       },
       "headers": [
-        { "name": "Content-Type", "value": "application/json" },
-        { "name": "Authorization", "value": "Bearer {{ _.candidate_token }}" },
-        { "name": "Idempotency-Key", "value": "{% uuid 'v4' %}" }
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        },
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.candidate_token || _.admin_token }}"
+        },
+        {
+          "name": "Idempotency-Key",
+          "value": "{% uuid 'v4' %}"
+        }
       ],
       "metaSortKey": 302,
       "_type": "request"
@@ -268,7 +318,12 @@
       "url": "{{ _.base_url }}/v1/me/profile/readiness?purpose=SUBMISSION",
       "name": "3. Avaliar Prontidão para Candidatura",
       "method": "GET",
-      "headers": [{ "name": "Authorization", "value": "Bearer {{ _.candidate_token }}" }],
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.candidate_token || _.admin_token }}"
+        }
+      ],
       "metaSortKey": 303,
       "_type": "request"
     },
@@ -292,8 +347,14 @@
         ]
       },
       "headers": [
-        { "name": "Authorization", "value": "Bearer {{ _.candidate_token }}" },
-        { "name": "Idempotency-Key", "value": "{% uuid 'v4' %}" }
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.candidate_token || _.admin_token }}"
+        },
+        {
+          "name": "Idempotency-Key",
+          "value": "{% uuid 'v4' %}"
+        }
       ],
       "afterResponseScript": "try {\n  const res = insomnia.response.json();\n  const id = res.attemptId || res.importId;\n  if (id) {\n    insomnia.environment.set('import_attempt_id', id);\n  }\n} catch (e) {\n  console.error('Error in after-response script', e);\n}",
       "metaSortKey": 304,
@@ -307,7 +368,12 @@
       "url": "{{ _.base_url }}/v1/me/profile/imports/{{ _.import_attempt_id }}",
       "name": "5. Consultar Status da Importação",
       "method": "GET",
-      "headers": [{ "name": "Authorization", "value": "Bearer {{ _.candidate_token }}" }],
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.candidate_token || _.admin_token }}"
+        }
+      ],
       "metaSortKey": 305,
       "_type": "request"
     },
@@ -335,8 +401,14 @@
         "text": "{\n  \"slug\": \"nubank\",\n  \"name\": \"Nubank\",\n  \"officialUrl\": \"https://nubank.inhire.app/jobs\"\n}"
       },
       "headers": [
-        { "name": "Content-Type", "value": "application/json" },
-        { "name": "Authorization", "value": "Bearer {{ _.admin_token }}" }
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        },
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.admin_token }}"
+        }
       ],
       "afterResponseScript": "try {\n  const res = insomnia.response.json();\n  if (res.id) {\n    insomnia.environment.set('tenant_id', res.id);\n  }\n} catch (e) {\n  console.error('Error in after-response script', e);\n}",
       "metaSortKey": 401,
@@ -355,8 +427,14 @@
         "text": "{\n  \"tenantId\": \"{{ _.tenant_id }}\",\n  \"externalId\": \"nu-eng-staff-01\",\n  \"title\": \"Staff Backend Engineer\",\n  \"url\": \"https://nubank.inhire.app/jobs/nu-eng-staff-01\",\n  \"description\": \"Arquitetura limpa, alta escala e resiliência com TypeScript e NestJS\",\n  \"location\": \"São Paulo, SP - Híbrido\"\n}"
       },
       "headers": [
-        { "name": "Content-Type", "value": "application/json" },
-        { "name": "Authorization", "value": "Bearer {{ _.admin_token }}" }
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        },
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.admin_token }}"
+        }
       ],
       "afterResponseScript": "try {\n  const res = insomnia.response.json();\n  if (res.id) {\n    insomnia.environment.set('job_id', res.id);\n  }\n} catch (e) {\n  console.error('Error in after-response script', e);\n}",
       "metaSortKey": 402,
@@ -371,14 +449,46 @@
       "name": "3. Pesquisar e Listar Vagas Públicas (Filtros: search, title, workplaceType, contractType, tags)",
       "method": "GET",
       "parameters": [
-        { "name": "search", "value": "", "disabled": true },
-        { "name": "title", "value": "Frontend", "disabled": true },
-        { "name": "tenantSlug", "value": "contabilizei", "disabled": true },
-        { "name": "workplaceType", "value": "Remote", "disabled": true },
-        { "name": "contractType", "value": "CLT", "disabled": true },
-        { "name": "tags", "value": "React,TypeScript", "disabled": true },
-        { "name": "page", "value": "1", "disabled": true },
-        { "name": "limit", "value": "50", "disabled": true }
+        {
+          "name": "search",
+          "value": "",
+          "disabled": true
+        },
+        {
+          "name": "title",
+          "value": "Frontend",
+          "disabled": true
+        },
+        {
+          "name": "tenantSlug",
+          "value": "contabilizei",
+          "disabled": true
+        },
+        {
+          "name": "workplaceType",
+          "value": "Remote",
+          "disabled": true
+        },
+        {
+          "name": "contractType",
+          "value": "CLT",
+          "disabled": true
+        },
+        {
+          "name": "tags",
+          "value": "React,TypeScript",
+          "disabled": true
+        },
+        {
+          "name": "page",
+          "value": "1",
+          "disabled": true
+        },
+        {
+          "name": "limit",
+          "value": "50",
+          "disabled": true
+        }
       ],
       "metaSortKey": 403,
       "_type": "request"
@@ -403,9 +513,21 @@
       "name": "5. Listar Empresas/Tenants do Catálogo",
       "method": "GET",
       "parameters": [
-        { "name": "search", "value": "", "disabled": true },
-        { "name": "page", "value": "1", "disabled": true },
-        { "name": "limit", "value": "50", "disabled": true }
+        {
+          "name": "search",
+          "value": "",
+          "disabled": true
+        },
+        {
+          "name": "page",
+          "value": "1",
+          "disabled": true
+        },
+        {
+          "name": "limit",
+          "value": "50",
+          "disabled": true
+        }
       ],
       "metaSortKey": 405,
       "_type": "request"
@@ -430,12 +552,36 @@
       "name": "7. Listar Vagas de uma Empresa/Tenant (com Filtros)",
       "method": "GET",
       "parameters": [
-        { "name": "search", "value": "", "disabled": true },
-        { "name": "title", "value": "Frontend", "disabled": true },
-        { "name": "workplaceType", "value": "Remote", "disabled": true },
-        { "name": "contractType", "value": "CLT", "disabled": true },
-        { "name": "page", "value": "1", "disabled": true },
-        { "name": "limit", "value": "50", "disabled": true }
+        {
+          "name": "search",
+          "value": "",
+          "disabled": true
+        },
+        {
+          "name": "title",
+          "value": "Frontend",
+          "disabled": true
+        },
+        {
+          "name": "workplaceType",
+          "value": "Remote",
+          "disabled": true
+        },
+        {
+          "name": "contractType",
+          "value": "CLT",
+          "disabled": true
+        },
+        {
+          "name": "page",
+          "value": "1",
+          "disabled": true
+        },
+        {
+          "name": "limit",
+          "value": "50",
+          "disabled": true
+        }
       ],
       "metaSortKey": 407,
       "_type": "request"
@@ -460,8 +606,14 @@
       "name": "1. [Admin] Disparar Descoberta Global (Auto-salva crawl_run_id)",
       "method": "POST",
       "headers": [
-        { "name": "Authorization", "value": "Bearer {{ _.admin_token }}" },
-        { "name": "Idempotency-Key", "value": "{% uuid 'v4' %}" }
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.admin_token }}"
+        },
+        {
+          "name": "Idempotency-Key",
+          "value": "{% uuid 'v4' %}"
+        }
       ],
       "afterResponseScript": "try {\n  const res = insomnia.response.json();\n  if (res.runId) {\n    insomnia.environment.set('crawl_run_id', res.runId);\n  }\n} catch (e) {\n  console.error('Error in after-response script', e);\n}",
       "metaSortKey": 501,
@@ -480,9 +632,18 @@
         "text": "{}"
       },
       "headers": [
-        { "name": "Content-Type", "value": "application/json" },
-        { "name": "Authorization", "value": "Bearer {{ _.admin_token }}" },
-        { "name": "Idempotency-Key", "value": "{% uuid 'v4' %}" }
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        },
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.admin_token }}"
+        },
+        {
+          "name": "Idempotency-Key",
+          "value": "{% uuid 'v4' %}"
+        }
       ],
       "afterResponseScript": "try {\n  const res = insomnia.response.json();\n  if (res.runId) {\n    insomnia.environment.set('crawl_run_id', res.runId);\n  }\n} catch (e) {\n  console.error('Error in after-response script', e);\n}",
       "metaSortKey": 502,
@@ -501,9 +662,18 @@
         "text": "{\n  \"tenantId\": \"{{ _.tenant_id }}\"\n}"
       },
       "headers": [
-        { "name": "Content-Type", "value": "application/json" },
-        { "name": "Authorization", "value": "Bearer {{ _.admin_token }}" },
-        { "name": "Idempotency-Key", "value": "{% uuid 'v4' %}" }
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        },
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.admin_token }}"
+        },
+        {
+          "name": "Idempotency-Key",
+          "value": "{% uuid 'v4' %}"
+        }
       ],
       "afterResponseScript": "try {\n  const res = insomnia.response.json();\n  if (res.runId) {\n    insomnia.environment.set('crawl_run_id', res.runId);\n  }\n} catch (e) {\n  console.error('Error in after-response script', e);\n}",
       "metaSortKey": 503,
@@ -517,7 +687,12 @@
       "url": "{{ _.base_url }}/v1/runs",
       "name": "3. [Admin] Listar Execuções de Coleta/Descoberta",
       "method": "GET",
-      "headers": [{ "name": "Authorization", "value": "Bearer {{ _.admin_token }}" }],
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.admin_token }}"
+        }
+      ],
       "metaSortKey": 503,
       "_type": "request"
     },
@@ -529,7 +704,12 @@
       "url": "{{ _.base_url }}/v1/runs/{{ _.crawl_run_id }}",
       "name": "4. [Admin] Consultar Status da Execução",
       "method": "GET",
-      "headers": [{ "name": "Authorization", "value": "Bearer {{ _.admin_token }}" }],
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.admin_token }}"
+        }
+      ],
       "metaSortKey": 504,
       "_type": "request"
     },
@@ -553,8 +733,14 @@
       "name": "1. Disparar Geração Sob Medida (Auto-salva resume_generation_id)",
       "method": "POST",
       "headers": [
-        { "name": "Authorization", "value": "Bearer {{ _.candidate_token }}" },
-        { "name": "Idempotency-Key", "value": "{% uuid 'v4' %}" }
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.candidate_token || _.admin_token }}"
+        },
+        {
+          "name": "Idempotency-Key",
+          "value": "{% uuid 'v4' %}"
+        }
       ],
       "afterResponseScript": "try {\n  const res = insomnia.response.json();\n  if (res.generationId) {\n    insomnia.environment.set('resume_generation_id', res.generationId);\n  }\n} catch (e) {\n  console.error('Error in after-response script', e);\n}",
       "metaSortKey": 601,
@@ -568,7 +754,12 @@
       "url": "{{ _.base_url }}/v1/jobs/{{ _.job_id }}/resume",
       "name": "2. Consultar Currículo por Vaga (Auto-salva resume_artifact_id)",
       "method": "GET",
-      "headers": [{ "name": "Authorization", "value": "Bearer {{ _.candidate_token }}" }],
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.candidate_token || _.admin_token }}"
+        }
+      ],
       "afterResponseScript": "try {\n  const res = insomnia.response.json();\n  if (res.resumeArtifactId) {\n    insomnia.environment.set('resume_artifact_id', res.resumeArtifactId);\n  }\n} catch (e) {\n  console.error('Error in after-response script', e);\n}",
       "metaSortKey": 602,
       "_type": "request"
@@ -581,7 +772,12 @@
       "url": "{{ _.base_url }}/v1/resume-generations/{{ _.resume_generation_id }}",
       "name": "3. Consultar Status da Geração de Currículo",
       "method": "GET",
-      "headers": [{ "name": "Authorization", "value": "Bearer {{ _.candidate_token }}" }],
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.candidate_token || _.admin_token }}"
+        }
+      ],
       "metaSortKey": 603,
       "_type": "request"
     },
@@ -593,7 +789,12 @@
       "url": "{{ _.base_url }}/v1/resume-artifacts/{{ _.resume_artifact_id }}/download",
       "name": "4. Download do PDF do Currículo",
       "method": "GET",
-      "headers": [{ "name": "Authorization", "value": "Bearer {{ _.candidate_token }}" }],
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.candidate_token || _.admin_token }}"
+        }
+      ],
       "metaSortKey": 604,
       "_type": "request"
     },
@@ -621,9 +822,18 @@
         "text": "{\n  \"resumeMode\": \"AI_TAILORED\"\n}"
       },
       "headers": [
-        { "name": "Content-Type", "value": "application/json" },
-        { "name": "Authorization", "value": "Bearer {{ _.candidate_token }}" },
-        { "name": "Idempotency-Key", "value": "{% uuid 'v4' %}" }
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        },
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.candidate_token || _.admin_token }}"
+        },
+        {
+          "name": "Idempotency-Key",
+          "value": "{% uuid 'v4' %}"
+        }
       ],
       "afterResponseScript": "try {\n  const res = insomnia.response.json();\n  if (res.applicationId) {\n    insomnia.environment.set('application_id', res.applicationId);\n  }\n} catch (e) {\n  console.error('Error in after-response script', e);\n}",
       "metaSortKey": 701,
@@ -637,7 +847,12 @@
       "url": "{{ _.base_url }}/v1/applications/{{ _.application_id }}",
       "name": "2. Consultar Status da Candidatura",
       "method": "GET",
-      "headers": [{ "name": "Authorization", "value": "Bearer {{ _.candidate_token }}" }],
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.candidate_token || _.admin_token }}"
+        }
+      ],
       "metaSortKey": 702,
       "_type": "request"
     },
@@ -649,7 +864,12 @@
       "url": "{{ _.base_url }}/v1/applications/{{ _.application_id }}/receipt",
       "name": "3. Obter Recibo Oficial de Submissão",
       "method": "GET",
-      "headers": [{ "name": "Authorization", "value": "Bearer {{ _.candidate_token }}" }],
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.candidate_token || _.admin_token }}"
+        }
+      ],
       "metaSortKey": 703,
       "_type": "request"
     },
@@ -661,7 +881,12 @@
       "url": "{{ _.base_url }}/v1/admin/applications",
       "name": "4. [Admin] Listar Todas as Candidaturas",
       "method": "GET",
-      "headers": [{ "name": "Authorization", "value": "Bearer {{ _.admin_token }}" }],
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.admin_token }}"
+        }
+      ],
       "metaSortKey": 704,
       "_type": "request"
     },
@@ -689,9 +914,18 @@
         "text": "{\n  \"enabled\": true,\n  \"minScore\": 70,\n  \"dailyLimit\": 10,\n  \"timezone\": \"America/Sao_Paulo\",\n  \"targetRoles\": [\n    \"Staff Backend Engineer\",\n    \"Principal Software Architect\"\n  ],\n  \"targetLocations\": [\n    \"São Paulo\",\n    \"Remote\"\n  ]\n}"
       },
       "headers": [
-        { "name": "Content-Type", "value": "application/json" },
-        { "name": "Authorization", "value": "Bearer {{ _.candidate_token }}" },
-        { "name": "Idempotency-Key", "value": "{% uuid 'v4' %}" }
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        },
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.candidate_token || _.admin_token }}"
+        },
+        {
+          "name": "Idempotency-Key",
+          "value": "{% uuid 'v4' %}"
+        }
       ],
       "metaSortKey": 801,
       "_type": "request"
@@ -704,7 +938,12 @@
       "url": "{{ _.base_url }}/v1/me/auto-apply-policy",
       "name": "2. Consultar Política de Auto-Apply",
       "method": "GET",
-      "headers": [{ "name": "Authorization", "value": "Bearer {{ _.candidate_token }}" }],
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.candidate_token || _.admin_token }}"
+        }
+      ],
       "metaSortKey": 802,
       "_type": "request"
     },
@@ -716,7 +955,12 @@
       "url": "{{ _.base_url }}/v1/me/auto-apply-decisions",
       "name": "3. Listar Histórico de Decisões de Auto-Apply",
       "method": "GET",
-      "headers": [{ "name": "Authorization", "value": "Bearer {{ _.candidate_token }}" }],
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.candidate_token || _.admin_token }}"
+        }
+      ],
       "metaSortKey": 803,
       "_type": "request"
     },
@@ -739,7 +983,12 @@
       "url": "{{ _.base_url }}/v1/operations/metrics",
       "name": "1. [Admin] Métricas Operacionais e Filas",
       "method": "GET",
-      "headers": [{ "name": "Authorization", "value": "Bearer {{ _.admin_token }}" }],
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.admin_token }}"
+        }
+      ],
       "metaSortKey": 901,
       "_type": "request"
     },
@@ -751,7 +1000,12 @@
       "url": "{{ _.base_url }}/v1/operations/reconcile",
       "name": "2. [Admin] Disparar Reconciliação de Trabalhos Pendentes",
       "method": "POST",
-      "headers": [{ "name": "Authorization", "value": "Bearer {{ _.admin_token }}" }],
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer {{ _.admin_token }}"
+        }
+      ],
       "metaSortKey": 902,
       "_type": "request"
     }
