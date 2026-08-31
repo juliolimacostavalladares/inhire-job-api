@@ -62,6 +62,23 @@ async function bootstrap() {
   await app.listen(port);
   logger.log({ message: `InHire Backend API listening on port ${port}` }, 'Bootstrap');
   logger.log({ message: `BullMQ Dashboard running at http://localhost:${port}/admin/queues` }, 'Bootstrap');
+
+  // Hot-reload de variáveis de ambiente quando o arquivo .env for alterado
+  if (process.env.NODE_ENV !== 'production') {
+    const fs = await import('fs');
+    const path = await import('path');
+    const dotenv = await import('dotenv');
+    const envPath = path.resolve(process.cwd(), '.env');
+    if (fs.existsSync(envPath)) {
+      fs.watchFile(envPath, { interval: 500 }, () => {
+        dotenv.config({ path: envPath, override: true });
+        logger.log(
+          { message: '♻️ .env atualizado com sucesso! Novas variáveis recarregadas em tempo de execução.' },
+          'Bootstrap',
+        );
+      });
+    }
+  }
 }
 
 bootstrap();
