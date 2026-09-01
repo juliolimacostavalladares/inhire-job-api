@@ -7,6 +7,7 @@ export interface TailoredContentResult {
   tailoredHeadline: string;
   tailoredSummary: string;
   highlightedSkills: string[];
+  markdown?: string;
 }
 
 export interface AiProvider {

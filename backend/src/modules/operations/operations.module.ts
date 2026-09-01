@@ -20,7 +20,7 @@ import { SystemClock } from '@shared/infrastructure/clock/system-clock';
 import { ID_GENERATOR_PORT } from '@shared/domain/ports/id-generator.port';
 import { UuidGenerator } from '@shared/infrastructure/id-generator/uuid-generator';
 import { ARTIFACT_STORAGE_PORT } from '@shared/infrastructure/storage/artifact-storage.port';
-import { InMemoryArtifactStorage } from '@shared/infrastructure/storage/in-memory-artifact-storage';
+import { S3MinioArtifactStorage } from '@shared/infrastructure/storage/s3-minio-artifact-storage';
 
 @Module({
   imports: [AuthModule, ApplicationsModule],
@@ -34,7 +34,7 @@ import { InMemoryArtifactStorage } from '@shared/infrastructure/storage/in-memor
     GetMetricsUseCase,
     { provide: AUDIT_LOGS_REPOSITORY, useClass: PrismaAuditLogsRepository },
     { provide: HEALTH_CHECK_SERVICE, useClass: SystemHealthService },
-    { provide: ARTIFACT_STORAGE_PORT, useClass: InMemoryArtifactStorage },
+    { provide: ARTIFACT_STORAGE_PORT, useClass: S3MinioArtifactStorage },
     { provide: CLOCK_PORT, useClass: SystemClock },
     { provide: ID_GENERATOR_PORT, useClass: UuidGenerator },
   ],

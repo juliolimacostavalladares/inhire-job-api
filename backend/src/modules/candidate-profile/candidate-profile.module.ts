@@ -20,7 +20,7 @@ import { AuthModule } from '../auth/auth.module';
 import { PrismaService } from '@shared/infrastructure/prisma/prisma.service';
 import { BullMQService } from '@shared/infrastructure/bullmq/bullmq.service';
 import { ARTIFACT_STORAGE_PORT } from '@shared/infrastructure/storage/artifact-storage.port';
-import { InMemoryArtifactStorage } from '@shared/infrastructure/storage/in-memory-artifact-storage';
+import { S3MinioArtifactStorage } from '@shared/infrastructure/storage/s3-minio-artifact-storage';
 import { SanitizedLogger } from '@shared/infrastructure/logger/sanitized-logger.service';
 import { CLOCK_PORT } from '@shared/domain/ports/clock.port';
 import { SystemClock } from '@shared/infrastructure/clock/system-clock';
@@ -46,7 +46,7 @@ import { UuidGenerator } from '@shared/infrastructure/id-generator/uuid-generato
     { provide: PROFILE_IMPORT_ATTEMPTS_REPOSITORY, useClass: PrismaProfileImportAttemptsRepository },
     { provide: PROFILE_AI_EXTRACTOR, useClass: NineRouterProfileAiExtractor },
     { provide: CANDIDATE_PROFILE_SERVICE, useClass: CandidateProfileFacade },
-    { provide: ARTIFACT_STORAGE_PORT, useClass: InMemoryArtifactStorage },
+    { provide: ARTIFACT_STORAGE_PORT, useClass: S3MinioArtifactStorage },
     { provide: CLOCK_PORT, useClass: SystemClock },
     { provide: ID_GENERATOR_PORT, useClass: UuidGenerator },
   ],
